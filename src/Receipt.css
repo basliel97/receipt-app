@@ -27,6 +27,11 @@
   word-break: break-all;
 }
 
+/* Keeps a trailing token (e.g. the PLC suffix) from splitting across lines */
+.nowrap {
+  white-space: nowrap;
+}
+
 .flex-row {
   display: flex;
   justify-content: space-between;
@@ -49,8 +54,23 @@
   font-style: normal;
   transform: scaleY(0.9);
   -webkit-font-smoothing: none;
-  font-size: 23px;
+  font-size: 30px;
   font-weight: bold;
+  align-items: baseline;
+}
+
+/* Total amount out-sizes the TOTAL: label, baselines kept aligned */
+.total-amount {
+  font-size: 34px;
+}
+
+/* --- CASH BIRR: sits between the total and the tax lines --- */
+.cash-block {
+  font-family: 'VT323', 'Courier New', monospace;
+  font-style: normal;
+  -webkit-font-smoothing: none;
+  font-size: 23px;
+  font-weight: normal;
 }
 
 /* --- ELTRADE LOGO BRANDING TEXT STYLE --- */

@@ -16,6 +16,7 @@ export default function ReceiptGenerator() {
     buyerTin: '0091392494',
     buyerName: 'SMT CONSTRUCTION',
     buyerPhone: '',
+    buyerSuffix: 'PLC',
     taxRate: 15.0,
     cashBirr: 400000.00,
     mfeNumber: 'MFE0066951',
@@ -133,6 +134,10 @@ export default function ReceiptGenerator() {
               <label className="block text-xs font-semibold text-slate-600 mb-1">Buyer Name</label>
               <input type="text" name="buyerName" value={formData.buyerName} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Name Suffix</label>
+              <input type="text" name="buyerSuffix" value={formData.buyerSuffix} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
           </div>
         </div>
 
@@ -220,7 +225,7 @@ export default function ReceiptGenerator() {
 
           <div className="space-y-0.5 mt-3">
             <div className="receipt-row">Buyer's TIN: {formData.buyerTin}</div>
-            <div className="receipt-row">Buyer's name: {formData.buyerName} PLC</div>
+            <div className="receipt-row">Buyer's name: {formData.buyerName}{formData.buyerSuffix ? <> <span className="nowrap">{formData.buyerSuffix}</span></> : ''}</div>
             <div className="receipt-row">Buyer's phone: {formData.buyerPhone || '........................'}</div>
           </div>
 
@@ -248,9 +253,9 @@ export default function ReceiptGenerator() {
 
           <div className="flex-row total-block my-1.5">
             <span>TOTAL:</span>
-            <span className="align-right">*{totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <span className="align-right total-amount">*{totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </div>
-          <div className="flex-row">
+          <div className="flex-row cash-block my-1">
             <span>CASH BIRR</span>
             <span>*{Number(formData.cashBirr).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </div>
