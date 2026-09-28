@@ -183,91 +183,93 @@ export default function ReceiptGenerator() {
         </div>
 
         <button onClick={handlePrint} className="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-extrabold hover:bg-emerald-700 transition shadow-lg text-base tracking-wide flex items-center justify-center gap-2">
-          🖨️ Print POS Receipt (58mm)
+          🖨️ Print POS Receipt (80mm)
         </button>
       </div>
 
 
-      {/* RECEIPT PREVIEW (Exact 58mm Thermal POS Roll Simulator) */}
+      {/* RECEIPT PREVIEW */}
       <div className="w-full lg:w-1/2 flex justify-center items-start sticky top-6">
-        <div className="pos-receipt">
+        <div className="pos-receipt receipt-body">
           
           {/* Top Trademark */}
-          <div className="text-center mb-2">
-            <h1 className="text-[20px] font-black tracking-tighter">ELTRADE ®</h1>
+          <div className="text-center mb-3 pt-1">
+            <div className="eltrade-container">
+              <span className="eltrade-brand">ELTRADE</span>
+              <span className="eltrade-tm">®</span>
+            </div>
           </div>
 
           <div className="text-center space-y-0.5">
-            <p>TIN:{formData.tin}</p>
-            <p className="font-bold">{formData.sellerName}</p>
-            <p className="font-bold">{formData.companyName}</p>
-            <p>{formData.location}</p>
-            <p>{formData.landmark}</p>
-            <p>E-MOBILE:-{formData.eMobile}</p>
-            <p>TEL:-{formData.tel}</p>
+            <div className="receipt-row">TIN:{formData.tin}</div>
+            <div className="receipt-row">{formData.sellerName}</div>
+            <div className="receipt-row">{formData.companyName}</div>
+            <div className="receipt-row">{formData.location}</div>
+            <div className="receipt-row">{formData.landmark}</div>
+            <div className="receipt-row">E-MOBILE:-{formData.eMobile}</div>
+            <div className="receipt-row">TEL:-{formData.tel}</div>
           </div>
 
-          <div className="flex justify-between mt-2">
+          <div className="flex-row mt-3">
             <span>FS No. {formData.fsNo}</span>
             <span>{formData.time}</span>
           </div>
-          <div>
+          <div className="receipt-row">
             <span>{formData.date}</span>
           </div>
 
-          <div className="text-center my-1">--------------------------------</div>
-
-          <div className="space-y-0.5">
-            <p>Buyer's TIN: {formData.buyerTin}</p>
-            <p>Buyer's name: {formData.buyerName} PLC</p>
-            <p>Buyer's phone: {formData.buyerPhone || '........................'}</p>
+          <div className="space-y-0.5 mt-3">
+            <div className="receipt-row">Buyer's TIN: {formData.buyerTin}</div>
+            <div className="receipt-row">Buyer's name: {formData.buyerName} PLC</div>
+            <div className="receipt-row">Buyer's phone: {formData.buyerPhone || '........................'}</div>
           </div>
 
-          <div className="text-center my-1">--------------------------------</div>
+          <div className="mt-2 space-y-0.5">
+            {items.map((item) => (
+              <div key={item.id} className="flex-row my-0.5">
+                <span className="uppercase">{item.name}</span>
+                <span>*{item.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              </div>
+            ))}
+          </div>
 
-          {items.map((item) => (
-            <div key={item.id} className="flex justify-between my-0.5">
-              <span className="uppercase">{item.name}</span>
-              <span>*{item.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-            </div>
-          ))}
+          <div className="receipt-divider"></div>
 
-          <div className="text-center my-1">--------------------------------</div>
-
-          <div className="flex justify-between">
+          <div className="flex-row">
             <span>TAXBL1</span>
             <span>*{taxableAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex-row">
             <span>TAX1 {Number(formData.taxRate).toFixed(2)}%</span>
             <span>*{taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </div>
 
-          <div className="text-center my-1">--------------------------------</div>
+          <div className="receipt-divider"></div>
 
-          <div className="flex justify-between font-bold text-[12px] mt-1">
+          <div className="flex-row total-block my-1.5">
             <span>TOTAL:</span>
-            <span>*{totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <span className="align-right">*{totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex-row">
             <span>CASH BIRR</span>
             <span>*{Number(formData.cashBirr).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex-row">
             <span>ITEM#</span>
             <span>{items.length}</span>
           </div>
 
-          <div className="text-center mt-3">
-            <p>ERCA</p>
-            <div className="flex justify-center items-center gap-2 text-[14px] font-bold mt-0.5">
-              <span>ET</span>
-              <span>{formData.mfeNumber}</span>
+          {/* Bottom Trademark */}
+          <div className="text-center mt-4">
+            <div className="receipt-row">ERCA</div>
+            <div className="flex justify-center items-center mt-1">
+              <div className="eltrade-emblem"></div>
+              <span className="text-[21px]">{formData.mfeNumber}</span>
             </div>
           </div>
 
-          <div className="text-center font-bold mt-3">
-            <p>THANK YOU COME AGAIN!</p>
+          <div className="text-center mt-3">
+            <div className="receipt-row">THANK YOU COME AGAIN!</div>
           </div>
 
         </div>

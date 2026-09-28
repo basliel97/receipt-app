@@ -1,19 +1,114 @@
+/* 1. Google Font Imports MUST be at the absolute top */
+@import url('https://fonts.googleapis.com/css2?family=Oswald:ital,wght@0,700;1,700&family=VT323&display=swap');
 @import "tailwindcss";
 
-/* Exact 58mm POS Thermal Receipt Styling */
+/* 2. 80mm Thermal POS Roll Simulator Container */
 .pos-receipt {
-  width: 58mm; /* Standard thermal receipt paper width */
+  width: 80mm; /* Standard 80mm roll */
   background: #ffffff;
-  padding: 4mm 3mm;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 10px;
-  color: #000000;
-  line-height: 1.15;
+  padding: 5mm 4mm;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   word-break: break-all;
 }
 
-/* Print Rules for 58mm Thermal Printer */
+/* --- RECEIPT BODY TEXT STYLE --- */
+.receipt-body {
+  font-family: 'VT323', 'Courier New', monospace;
+  font-style: normal;
+  font-size: 21px; /* Scaled up slightly for the wider container */
+  color: #1a1a1a;
+  line-height: 1.15;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+
+.receipt-row {
+  width: 100%;
+  word-break: break-all;
+}
+
+.flex-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.align-right {
+  text-align: right;
+}
+
+/* --- VISIBLE DASHED DIVIDERS --- */
+.receipt-divider {
+  border-top: 2px dashed #222222;
+  margin: 6px 0;
+  width: 100%;
+}
+
+/* --- TOTAL BLOCK TEXT STYLE --- */
+.total-block {
+  font-family: 'VT323', 'Courier New', monospace;
+  font-style: normal;
+  transform: scaleY(0.9);
+  -webkit-font-smoothing: none;
+  font-size: 23px;
+  font-weight: bold;
+}
+
+/* --- ELTRADE LOGO BRANDING TEXT STYLE --- */
+.eltrade-container {
+  display: inline-flex;
+  align-items: flex-start;
+  line-height: 1;
+}
+
+.eltrade-brand {
+  font-family: 'Oswald', 'Impact', sans-serif;
+  font-style: italic;
+  transform: skewX(-10deg);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1;
+  display: inline-block;
+}
+
+/* --- TRADEMARK SYMBOL STYLE (Anchored top-right of the wordmark) --- */
+.eltrade-tm {
+  font-family: 'Oswald', 'Impact', sans-serif;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+  margin-left: 8px;
+  margin-top: 1px;
+  flex: 0 0 auto;
+}
+
+/* --- BOTTOM EMBLEM: skewed ET monogram --- */
+/* Border box = E stem (left) + shared top bar, which doubles as the T crossbar.
+   Gradient layers: E middle arm, E bottom arm (both 50%, so the baseline does
+   NOT run the full width like the top bar), and the T's vertical stem. */
+.eltrade-emblem {
+  position: relative;
+  width: 24px;
+  height: 15px;
+  background-color: transparent;
+  transform: skewX(-32deg);
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 10px;
+  border-style: solid;
+  border-width: 2.5px;
+  border-right-style: none;
+  border-bottom-style: none;
+  border-color: #000000;
+  box-sizing: border-box;
+  background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-position: center left, left bottom, 12px top;
+  background-size: 50% 2.5px, 50% 2.5px, 2.5px 100%;
+}
+
+/* Print Rules for Thermal Printer */
 @media print {
   body * {
     visibility: hidden;
@@ -27,8 +122,8 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 58mm !important;
-    max-width: 58mm !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
     margin: 0 !important;
     padding: 0 2mm !important;
     box-shadow: none !important;
@@ -40,6 +135,6 @@
 
   @page {
     margin: 0;
-    size: 58mm auto; /* Locks printer roll size */
+    size: 80mm auto;
   }
 }
