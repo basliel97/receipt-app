@@ -193,7 +193,7 @@ export default function ReceiptGenerator() {
         <div className="pos-receipt receipt-body">
           
           {/* Top Trademark */}
-          <div className="text-center mb-3 pt-1">
+          <div className="text-left pl-8 mb-3 pt-1">
             <div className="eltrade-container">
               <span className="eltrade-brand">ELTRADE</span>
               <span className="eltrade-tm">®</span>
