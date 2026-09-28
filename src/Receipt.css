@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* Exact 58mm POS Thermal Receipt Styling */
+.pos-receipt {
+  width: 58mm; /* Standard thermal receipt paper width */
+  background: #ffffff;
+  padding: 4mm 3mm;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: #000000;
+  line-height: 1.15;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  word-break: break-all;
+}
+
+/* Print Rules for 58mm Thermal Printer */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .pos-receipt, .pos-receipt * {
+    visibility: visible;
+  }
+
+  .pos-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm !important;
+    max-width: 58mm !important;
+    margin: 0 !important;
+    padding: 0 2mm !important;
+    box-shadow: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  @page {
+    margin: 0;
+    size: 58mm auto; /* Locks printer roll size */
+  }
+}
