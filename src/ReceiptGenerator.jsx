@@ -54,82 +54,142 @@ export default function ReceiptGenerator() {
   const totalAmount = taxableAmount + taxAmount;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 p-6 bg-gray-100 min-h-screen">
+    <div className="flex flex-col lg:flex-row gap-8 p-4 md:p-8 bg-slate-100 min-h-screen">
       
       {/* FORM BUILDER PANEL (Hidden on Print) */}
-      <div className="w-full lg:w-1/2 bg-white p-6 rounded-xl shadow-md overflow-y-auto max-h-[90vh] no-print">
-        <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">POS Receipt Generator</h2>
+      <div className="w-full lg:w-1/2 bg-white p-6 md:p-8 rounded-2xl shadow-xl overflow-y-auto max-h-[95vh] no-print border border-slate-200">
+        <div className="border-b border-slate-200 pb-4 mb-6">
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight">POS Receipt Generator</h2>
+          <p className="text-slate-500 text-sm mt-1">Configure your receipt fields and line items dynamically.</p>
+        </div>
         
         {/* Seller Info */}
-        <div className="mb-4 space-y-3">
-          <h3 className="font-semibold text-gray-700 text-sm uppercase">Seller Information</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <input type="text" name="tin" placeholder="TIN" value={formData.tin} onChange={handleChange} className="p-2 border rounded text-sm" />
-            <input type="text" name="eMobile" placeholder="E-Mobile" value={formData.eMobile} onChange={handleChange} className="p-2 border rounded text-sm" />
-            <input type="text" name="sellerName" placeholder="Owner Name" value={formData.sellerName} onChange={handleChange} className="p-2 border rounded text-sm col-span-2" />
-            <input type="text" name="companyName" placeholder="Company Name" value={formData.companyName} onChange={handleChange} className="p-2 border rounded text-sm col-span-2" />
-            <input type="text" name="location" placeholder="Location" value={formData.location} onChange={handleChange} className="p-2 border rounded text-sm col-span-2" />
-            <input type="text" name="landmark" placeholder="Landmark" value={formData.landmark} onChange={handleChange} className="p-2 border rounded text-sm" />
-            <input type="text" name="tel" placeholder="TEL" value={formData.tel} onChange={handleChange} className="p-2 border rounded text-sm" />
+        <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+          <h3 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Seller Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">TIN Number</label>
+              <input type="text" name="tin" value={formData.tin} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">E-Mobile</label>
+              <input type="text" name="eMobile" value={formData.eMobile} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Owner Name</label>
+              <input type="text" name="sellerName" value={formData.sellerName} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Company Name</label>
+              <input type="text" name="companyName" value={formData.companyName} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Location / Address</label>
+              <input type="text" name="location" value={formData.location} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Landmark</label>
+              <input type="text" name="landmark" value={formData.landmark} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Telephone</label>
+              <input type="text" name="tel" value={formData.tel} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
           </div>
         </div>
 
         {/* Transaction Info */}
-        <div className="mb-4 space-y-3">
-          <h3 className="font-semibold text-gray-700 text-sm uppercase">Transaction Info</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <input type="text" name="fsNo" placeholder="FS No" value={formData.fsNo} onChange={handleChange} className="p-2 border rounded text-sm" />
-            <input type="text" name="date" placeholder="Date" value={formData.date} onChange={handleChange} className="p-2 border rounded text-sm" />
-            <input type="text" name="time" placeholder="Time" value={formData.time} onChange={handleChange} className="p-2 border rounded text-sm" />
+        <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+          <h3 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Transaction Info</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">FS No.</label>
+              <input type="text" name="fsNo" value={formData.fsNo} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Date</label>
+              <input type="text" name="date" value={formData.date} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Time</label>
+              <input type="text" name="time" value={formData.time} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
           </div>
         </div>
 
         {/* Buyer Info */}
-        <div className="mb-4 space-y-3">
-          <h3 className="font-semibold text-gray-700 text-sm uppercase">Buyer Information</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <input type="text" name="buyerTin" placeholder="Buyer TIN" value={formData.buyerTin} onChange={handleChange} className="p-2 border rounded text-sm" />
-            <input type="text" name="buyerPhone" placeholder="Buyer Phone" value={formData.buyerPhone} onChange={handleChange} className="p-2 border rounded text-sm" />
-            <input type="text" name="buyerName" placeholder="Buyer Name" value={formData.buyerName} onChange={handleChange} className="p-2 border rounded text-sm col-span-2" />
+        <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+          <h3 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Buyer Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Buyer TIN</label>
+              <input type="text" name="buyerTin" value={formData.buyerTin} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Buyer Phone</label>
+              <input type="text" name="buyerPhone" value={formData.buyerPhone} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Buyer Name</label>
+              <input type="text" name="buyerName" value={formData.buyerName} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
           </div>
         </div>
 
         {/* Line Items Manager */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-          <h3 className="font-semibold text-gray-700 text-sm uppercase mb-3">Line Items</h3>
-          <div className="flex gap-2 mb-3">
-            <input type="text" placeholder="Item Name (e.g. payment one)" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} className="p-2 border rounded text-sm flex-2" />
-            <input type="number" placeholder="Price (ETB)" value={newItemPrice} onChange={(e) => setNewItemPrice(e.target.value)} className="p-2 border rounded text-sm flex-1" />
-            <button onClick={handleAddItem} className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700">Add</button>
+        <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+          <h3 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Line Items (Payment/Goods)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="md:col-span-1.5">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Item Name</label>
+              <input type="text" placeholder="e.g. payment one" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Price (ETB)</label>
+              <input type="number" placeholder="0.00" value={newItemPrice} onChange={(e) => setNewItemPrice(e.target.value)} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div className="flex items-end">
+              <button onClick={handleAddItem} className="w-full bg-blue-600 text-white font-bold p-2.5 rounded-lg text-sm hover:bg-blue-700 transition shadow-sm">+ Add Item</button>
+            </div>
           </div>
-          <ul className="space-y-2 max-h-40 overflow-y-auto">
+          
+          <ul className="space-y-2 mt-3 max-h-44 overflow-y-auto pr-1">
             {items.map((item) => (
-              <li key={item.id} className="flex justify-between items-center bg-white p-2 border rounded text-sm">
-                <span>{item.name} - *{item.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                <button onClick={() => handleRemoveItem(item.id)} className="text-red-500 font-bold hover:text-red-700 px-2">✕</button>
+              <li key={item.id} className="flex justify-between items-center bg-white p-3 border border-slate-200 rounded-lg text-sm shadow-xs">
+                <span className="font-medium text-slate-800 uppercase">{item.name} — <strong className="text-blue-600">*{item.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></span>
+                <button onClick={() => handleRemoveItem(item.id)} className="text-red-500 font-bold hover:text-red-700 px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition">Remove</button>
               </li>
             ))}
           </ul>
         </div>
 
         {/* Tax & Totals Setup */}
-        <div className="mb-6 space-y-3">
-          <h3 className="font-semibold text-gray-700 text-sm uppercase">Tax & Totals Setup</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <input type="number" name="taxRate" placeholder="Tax %" value={formData.taxRate} onChange={handleChange} className="p-2 border rounded text-sm" />
-            <input type="number" name="cashBirr" placeholder="Cash Paid" value={formData.cashBirr} onChange={handleChange} className="p-2 border rounded text-sm" />
-            <input type="text" name="mfeNumber" placeholder="MFE Number" value={formData.mfeNumber} onChange={handleChange} className="p-2 border rounded text-sm" />
+        <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+          <h3 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Tax & Totals Setup</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Tax Rate (%)</label>
+              <input type="number" name="taxRate" value={formData.taxRate} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Cash Paid (ETB)</label>
+              <input type="number" name="cashBirr" value={formData.cashBirr} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">MFE Number</label>
+              <input type="text" name="mfeNumber" value={formData.mfeNumber} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            </div>
           </div>
         </div>
 
-        <button onClick={handlePrint} className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition">
+        <button onClick={handlePrint} className="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-extrabold hover:bg-emerald-700 transition shadow-lg text-base tracking-wide flex items-center justify-center gap-2">
           🖨️ Print POS Receipt (58mm)
         </button>
       </div>
 
 
       {/* RECEIPT PREVIEW (Exact 58mm Thermal POS Roll Simulator) */}
-      <div className="w-full lg:w-1/2 flex justify-center items-start">
+      <div className="w-full lg:w-1/2 flex justify-center items-start sticky top-6">
         <div className="pos-receipt">
           
           {/* Top Trademark */}
