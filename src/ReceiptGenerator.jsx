@@ -292,7 +292,7 @@ export default function ReceiptGenerator() {
                 <line x1="11" y1="2" x2="2" y2="14" />
                 <line x1="2" y1="14" x2="14" y2="14" />
                 <line x1="23" y1="2" x2="14" y2="14" />
-                <line x1="6.5" y1="8" x2="13" y2="8" />
+                <line x1="6.5" y1="8" x2="15" y2="8" />
               </svg>
               <span className="mfe-number">{formData.mfeNumber}</span>
             </div>
