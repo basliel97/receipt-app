@@ -126,8 +126,8 @@
 }
 
 .mfe-number {
-  font-family: 'Consolas', 'Courier New', monospace;
-  font-size: 13.5px;
+  font-family: 'VT323', 'Consolas', 'Courier New', monospace;
+  font-size: 16px;
   font-weight: bold;
   letter-spacing: 0.5px;
   white-space: nowrap;
