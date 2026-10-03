@@ -260,7 +260,7 @@ export default function ReceiptGenerator() {
           <div className="receipt-divider"></div>
 
           <div className="mt-1">
-            <div className="total-label">TOTAL :</div>
+            <div className="total-label">TOTAL:</div>
             <div className="total-amount-row">*{formatCurrency(totalAmount)}</div>
           </div>
 
