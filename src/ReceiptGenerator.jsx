@@ -6,7 +6,7 @@ export default function ReceiptGenerator() {
     tin: '0056846618',
     sellerName: 'TADESSE HUMNESA ITAHA',
     companyName: 'SIDA CONSTRUCTION & ENGINEERING',
-    location: 'DANDI S/C GINCHI K.01 HN.NEW',
+    location: "DANDI\nS/C GINCHI K.01 HN.NEW",
     landmark: 'AROUND ABBA GADA',
     eMobile: '0983461460',
     tel: '0910629988',
@@ -50,6 +50,12 @@ export default function ReceiptGenerator() {
     window.print();
   };
 
+  const formatCurrency = (val) =>
+    Number(val || 0).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
   const taxableAmount = items.reduce((acc, item) => acc + item.price, 0);
   const taxAmount = (taxableAmount * Number(formData.taxRate)) / 100;
   const totalAmount = taxableAmount + taxAmount;
@@ -86,7 +92,7 @@ export default function ReceiptGenerator() {
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs font-semibold text-slate-600 mb-1">Location / Address</label>
-              <input type="text" name="location" value={formData.location} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <textarea rows={2} name="location" value={formData.location} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">Landmark</label>
@@ -161,7 +167,7 @@ export default function ReceiptGenerator() {
           <ul className="space-y-2 mt-3 max-h-44 overflow-y-auto pr-1">
             {items.map((item) => (
               <li key={item.id} className="flex justify-between items-center bg-white p-3 border border-slate-200 rounded-lg text-sm shadow-xs">
-                <span className="font-medium text-slate-800 uppercase">{item.name} — <strong className="text-blue-600">*{item.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></span>
+                <span className="font-medium text-slate-800 uppercase">{item.name} — <strong className="text-blue-600">*{formatCurrency(item.price)}</strong></span>
                 <button onClick={() => handleRemoveItem(item.id)} className="text-red-500 font-bold hover:text-red-700 px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition">Remove</button>
               </li>
             ))}
@@ -188,7 +194,7 @@ export default function ReceiptGenerator() {
         </div>
 
         <button onClick={handlePrint} className="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-extrabold hover:bg-emerald-700 transition shadow-lg text-base tracking-wide flex items-center justify-center gap-2">
-          🖨️ Print POS Receipt (80mm)
+          🖨️ Print POS Receipt (50mm)
         </button>
       </div>
 
@@ -198,7 +204,7 @@ export default function ReceiptGenerator() {
         <div className="pos-receipt receipt-body">
           
           {/* Top Trademark */}
-          <div className="text-left pl-8 mb-3 pt-1">
+          <div className="text-left pl-5 mb-2 pt-0.5">
             <div className="eltrade-container">
               <span className="eltrade-brand">ELTRADE</span>
               <span className="eltrade-tm">®</span>
@@ -206,34 +212,36 @@ export default function ReceiptGenerator() {
           </div>
 
           <div className="text-center space-y-0.5">
-            <div className="receipt-row">TIN:{formData.tin}</div>
-            <div className="receipt-row">{formData.sellerName}</div>
-            <div className="receipt-row">{formData.companyName}</div>
-            <div className="receipt-row">{formData.location}</div>
-            <div className="receipt-row">{formData.landmark}</div>
-            <div className="receipt-row">E-MOBILE:-{formData.eMobile}</div>
-            <div className="receipt-row">TEL:-{formData.tel}</div>
+            <div className="receipt-row nowrap">TIN:{formData.tin}</div>
+            <div className="receipt-row nowrap">{formData.sellerName}</div>
+            <div className="receipt-row nowrap">{formData.companyName}</div>
+            <div className="receipt-row whitespace-pre-line">{formData.location}</div>
+            <div className="receipt-row nowrap">{formData.landmark}</div>
+            <div className="receipt-row nowrap">E-MOBILE:-{formData.eMobile}</div>
+            <div className="receipt-row nowrap">TEL:-{formData.tel}</div>
           </div>
 
-          <div className="flex-row mt-3">
-            <span>FS No. {formData.fsNo}</span>
-            <span>{formData.time}</span>
-          </div>
-          <div className="receipt-row">
-            <span>{formData.date}</span>
+          <div className="mt-2">
+            <div className="receipt-row nowrap">FS No. {formData.fsNo}</div>
+            <div className="flex-row">
+              <span className="nowrap">{formData.date}</span>
+              <span className="nowrap">{formData.time}</span>
+            </div>
           </div>
 
-          <div className="space-y-0.5 mt-3">
-            <div className="receipt-row">Buyer's TIN: {formData.buyerTin}</div>
-            <div className="receipt-row">Buyer's name: {formData.buyerName}{formData.buyerSuffix ? <> <span className="nowrap">{formData.buyerSuffix}</span></> : ''}</div>
-            <div className="receipt-row">Buyer's phone: {formData.buyerPhone || '........................'}</div>
+          <div className="space-y-0.5 mt-2">
+            <div className="receipt-row nowrap">Buyer's TIN: {formData.buyerTin}</div>
+            <div className="receipt-row nowrap">Buyer's name: {formData.buyerName}</div>
+            {formData.buyerSuffix && <div className="receipt-row nowrap">{formData.buyerSuffix}</div>}
+            <div className="receipt-row nowrap">Buyer's phone:</div>
+            <div className="receipt-row nowrap">{formData.buyerPhone || '.....................'}</div>
           </div>
 
           <div className="mt-2 space-y-0.5">
             {items.map((item) => (
               <div key={item.id} className="flex-row my-0.5">
-                <span className="uppercase">{item.name}</span>
-                <span>*{item.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                <span>{item.name}</span>
+                <span className="nowrap">*{formatCurrency(item.price)}</span>
               </div>
             ))}
           </div>
@@ -241,39 +249,56 @@ export default function ReceiptGenerator() {
           <div className="receipt-divider"></div>
 
           <div className="flex-row">
-            <span>TAXBL1</span>
-            <span>*{taxableAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <span className="nowrap">TAXBL1</span>
+            <span className="nowrap">*{formatCurrency(taxableAmount)}</span>
           </div>
           <div className="flex-row">
-            <span>TAX1 {Number(formData.taxRate).toFixed(2)}%</span>
-            <span>*{taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <span className="nowrap">TAX1 {Number(formData.taxRate).toFixed(2)}%</span>
+            <span className="nowrap">*{formatCurrency(taxAmount)}</span>
           </div>
 
           <div className="receipt-divider"></div>
 
-          <div className="flex-row total-block my-1.5">
-            <span>TOTAL:</span>
-            <span className="align-right total-amount">*{totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+          <div className="mt-1">
+            <div className="total-label">TOTAL :</div>
+            <div className="total-amount-row">*{formatCurrency(totalAmount)}</div>
           </div>
-          <div className="flex-row cash-block my-1">
-            <span>CASH BIRR</span>
-            <span>*{Number(formData.cashBirr).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+
+          <div className="cash-block my-0.5">
+            <span className="nowrap">CASH BIRR</span>
+            <span className="nowrap">*{formatCurrency(formData.cashBirr)}</span>
           </div>
           <div className="flex-row">
-            <span>ITEM#</span>
-            <span>{items.length}</span>
+            <span className="nowrap">ITEM#</span>
+            <span className="nowrap">{items.length}</span>
           </div>
 
           {/* Bottom Trademark */}
-          <div className="text-center mt-4">
+          <div className="text-center mt-2.5">
             <div className="receipt-row">ERCA</div>
             <div className="flex justify-center items-center mt-1">
-              <div className="eltrade-emblem"></div>
-              <span className="text-[21px]">{formData.mfeNumber}</span>
+              <svg
+                className="eltrade-emblem-svg"
+                width="24"
+                height="13"
+                viewBox="0 0 34 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.25"
+                strokeLinecap="square"
+                strokeLinejoin="miter"
+              >
+                <line x1="11" y1="2" x2="31" y2="2" />
+                <line x1="11" y1="2" x2="2" y2="14" />
+                <line x1="2" y1="14" x2="14" y2="14" />
+                <line x1="23" y1="2" x2="14" y2="14" />
+                <line x1="6.5" y1="8" x2="15" y2="8" />
+              </svg>
+              <span className="mfe-number">{formData.mfeNumber}</span>
             </div>
           </div>
 
-          <div className="text-center mt-3">
+          <div className="text-center mt-2">
             <div className="receipt-row">THANK YOU COME AGAIN!</div>
           </div>
 
@@ -281,5 +306,6 @@ export default function ReceiptGenerator() {
       </div>
 
     </div>
+
   );
 }

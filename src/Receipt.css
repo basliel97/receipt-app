@@ -2,32 +2,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Oswald:ital,wght@0,700;1,700&family=VT323&display=swap');
 @import "tailwindcss";
 
-/* 2. 80mm Thermal POS Roll Simulator Container */
+/* 2. 50mm Thermal POS Roll Simulator Container */
 .pos-receipt {
-  width: 80mm; /* Standard 80mm roll */
+  width: 50mm; /* Standard 50mm roll */
   background: #ffffff;
-  padding: 5mm 4mm;
+  padding: 4mm 2mm;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  word-break: break-all;
+  box-sizing: border-box;
 }
 
 /* --- RECEIPT BODY TEXT STYLE --- */
 .receipt-body {
-  font-family: 'VT323', 'Courier New', monospace;
+  font-family: 'VT323', 'Consolas', 'Courier New', monospace;
   font-style: normal;
-  font-size: 21px; /* Scaled up slightly for the wider container */
+  font-size: 10.5px; /* Sized to fit 31-character lines like "SIDA CONSTRUCTION & ENGINEERING" */
+  letter-spacing: -0.25px;
   color: #1a1a1a;
-  line-height: 1.15;
+  line-height: 1.2;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: unset;
 }
 
 .receipt-row {
   width: 100%;
-  word-break: break-all;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
-/* Keeps a trailing token (e.g. the PLC suffix) from splitting across lines */
+/* Keeps a trailing token from splitting across lines */
 .nowrap {
   white-space: nowrap;
 }
@@ -35,6 +37,7 @@
 .flex-row {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
 }
 
 .align-right {
@@ -43,34 +46,42 @@
 
 /* --- VISIBLE DASHED DIVIDERS --- */
 .receipt-divider {
-  border-top: 2px dashed #222222;
-  margin: 6px 0;
+  border-top: 1px dashed #222222;
+  margin: 4px 0;
   width: 100%;
 }
 
 /* --- TOTAL BLOCK TEXT STYLE --- */
-.total-block {
-  font-family: 'VT323', 'Courier New', monospace;
-  font-style: normal;
-  transform: scaleY(0.9);
-  -webkit-font-smoothing: none;
-  font-size: 30px;
+.total-label {
+  font-family: 'VT323', 'Consolas', 'Courier New', monospace;
+  font-size: 15px;
+  letter-spacing: 0.5px;
   font-weight: bold;
-  align-items: baseline;
+  transform: scaleY(0.95);
 }
 
-/* Total amount out-sizes the TOTAL: label, baselines kept aligned */
-.total-amount {
-  font-size: 34px;
+.total-amount-row {
+  text-align: right;
+  font-family: 'VT323', 'Consolas', 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  transform: scaleY(0.95);
+  margin-top: 1px;
+  margin-bottom: 3px;
+  white-space: nowrap;
 }
 
 /* --- CASH BIRR: sits between the total and the tax lines --- */
 .cash-block {
-  font-family: 'VT323', 'Courier New', monospace;
+  font-family: 'VT323', 'Consolas', 'Courier New', monospace;
   font-style: normal;
   -webkit-font-smoothing: none;
-  font-size: 23px;
+  font-size: 11.5px;
   font-weight: normal;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
 }
 
 /* --- ELTRADE LOGO BRANDING TEXT STYLE --- */
@@ -84,9 +95,9 @@
   font-family: 'Oswald', 'Impact', sans-serif;
   font-style: italic;
   transform: skewX(-10deg);
-  font-size: 32px;
+  font-size: 20px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   line-height: 1;
   display: inline-block;
 }
@@ -95,37 +106,30 @@
 .eltrade-tm {
   font-family: 'Oswald', 'Impact', sans-serif;
   font-style: normal;
-  font-size: 12px;
+  font-size: 8px;
   font-weight: bold;
   line-height: 1;
-  margin-left: 8px;
+  margin-left: 3px;
   margin-top: 1px;
   flex: 0 0 auto;
 }
 
-/* --- BOTTOM EMBLEM: skewed ET monogram --- */
-/* Border box = E stem (left) + shared top bar, which doubles as the T crossbar.
-   Gradient layers: E middle arm, E bottom arm (both 50%, so the baseline does
-   NOT run the full width like the top bar), and the T's vertical stem. */
-.eltrade-emblem {
-  position: relative;
-  width: 24px;
-  height: 15px;
-  background-color: transparent;
-  transform: skewX(-32deg);
+/* --- BOTTOM EMBLEM: exact vector ET monogram --- */
+.eltrade-emblem-svg {
   display: inline-block;
   vertical-align: middle;
-  margin-right: 10px;
-  border-style: solid;
-  border-width: 2.5px;
-  border-right-style: none;
-  border-bottom-style: none;
-  border-color: #000000;
-  box-sizing: border-box;
-  background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-position: center left, left bottom, 12px top;
-  background-size: 50% 2.5px, 50% 2.5px, 2.5px 100%;
+  margin-right: 6px;
+  color: #000000;
+  flex-shrink: 0;
+}
+
+.mfe-number {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 13.5px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  color: #000000;
 }
 
 /* Print Rules for Thermal Printer */
@@ -142,10 +146,10 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 80mm !important;
-    max-width: 80mm !important;
+    width: 50mm !important;
+    max-width: 50mm !important;
     margin: 0 !important;
-    padding: 0 2mm !important;
+    padding: 0 1.5mm !important;
     box-shadow: none !important;
   }
 
@@ -155,6 +159,6 @@
 
   @page {
     margin: 0;
-    size: 80mm auto;
+    size: 50mm auto;
   }
 }
