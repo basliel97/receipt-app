@@ -6,7 +6,7 @@
 .pos-receipt {
   width: 50mm; /* Standard 50mm roll */
   background: #ffffff;
-  padding: 4mm 2mm;
+  padding: 4mm 1.5mm;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   box-sizing: border-box;
 }
@@ -15,8 +15,8 @@
 .receipt-body {
   font-family: 'VT323', 'Consolas', 'Courier New', monospace;
   font-style: normal;
-  font-size: 10.5px; /* Sized to fit 31-character lines like "SIDA CONSTRUCTION & ENGINEERING" */
-  letter-spacing: -0.25px;
+  font-size: 13px; /* Proportional larger size; lines like "SIDA CONSTRUCTION & ENGINEERING" fit cleanly on 1 line */
+  letter-spacing: -0.35px;
   color: #1a1a1a;
   line-height: 1.2;
   -webkit-font-smoothing: none;
@@ -54,10 +54,10 @@
 /* --- TOTAL BLOCK TEXT STYLE --- */
 .total-label {
   font-family: 'VT323', 'Consolas', 'Courier New', monospace;
-  font-size: 19px;
-  letter-spacing: 0.8px;
+  font-size: 24px;
+  letter-spacing: 0.9px;
   font-weight: bold;
-  line-height: 0.95;
+  line-height: 0.7;
   transform: scaleY(0.95);
 }
 
@@ -66,11 +66,10 @@
   font-family: 'VT323', 'Consolas', 'Courier New', monospace;
   font-size: 24px;
   font-weight: bold;
-  letter-spacing: 0.5px;
-  line-height: 0.95;
+  letter-spacing: 0.7px;
+  line-height: 0.7;
   transform: scaleY(0.95);
   margin-top: -2px;
-  margin-bottom: 3px;
   white-space: nowrap;
 }
 
@@ -79,7 +78,7 @@
   font-family: 'VT323', 'Consolas', 'Courier New', monospace;
   font-style: normal;
   -webkit-font-smoothing: none;
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: normal;
   display: flex;
   justify-content: space-between;
@@ -127,7 +126,7 @@
 
 .mfe-number {
   font-family: 'VT323', 'Consolas', 'Courier New', monospace;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: bold;
   letter-spacing: 0.5px;
   white-space: nowrap;
