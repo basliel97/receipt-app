@@ -15,7 +15,7 @@
 .receipt-body {
   font-family: 'VT323', 'Consolas', 'Courier New', monospace;
   font-style: normal;
-  font-size: 13px; /* Proportional larger size; lines like "SIDA CONSTRUCTION & ENGINEERING" fit cleanly on 1 line */
+  font-size: 14px; /* Proportional larger size; lines like "SIDA CONSTRUCTION & ENGINEERING" fit cleanly on 1 line */
   letter-spacing: -0.35px;
   color: #1a1a1a;
   line-height: 1.2;
