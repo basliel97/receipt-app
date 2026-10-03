@@ -54,8 +54,8 @@
 /* --- TOTAL BLOCK TEXT STYLE --- */
 .total-label {
   font-family: 'VT323', 'Consolas', 'Courier New', monospace;
-  font-size: 15px;
-  letter-spacing: 0.5px;
+  font-size: 19px;
+  letter-spacing: 0.8px;
   font-weight: bold;
   transform: scaleY(0.95);
 }
@@ -63,12 +63,12 @@
 .total-amount-row {
   text-align: right;
   font-family: 'VT323', 'Consolas', 'Courier New', monospace;
-  font-size: 16px;
+  font-size: 24px;
   font-weight: bold;
   letter-spacing: 0.5px;
   transform: scaleY(0.95);
-  margin-top: 1px;
-  margin-bottom: 3px;
+  margin-top: 2px;
+  margin-bottom: 4px;
   white-space: nowrap;
 }
 
