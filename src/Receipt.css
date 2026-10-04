@@ -1,26 +1,28 @@
-/* 1. Google Font Imports MUST be at the absolute top */
-@import url('https://fonts.googleapis.com/css2?family=Oswald:ital,wght@0,700;1,700&family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Oswald:ital,wght@0,400;0,500;0,600;0,700;1,700&display=swap');
 @import "tailwindcss";
 
-/* 2. 50mm Thermal POS Roll Simulator Container */
+/* 2. 58mm Thermal POS Roll Simulator Container (384 dots printable / 48mm width) */
 .pos-receipt {
-  width: 50mm; /* Standard 50mm roll */
+  width: 52mm; /* 58mm roll with ~3mm physical side margins */
+  max-width: 100%;
   background: #ffffff;
-  padding: 4mm 1.5mm;
+  padding: 3mm 2mm;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   box-sizing: border-box;
 }
 
-/* --- RECEIPT BODY TEXT STYLE --- */
+/* --- RECEIPT BODY TEXT STYLE (Matching BluePOS ESC/POS Font A 12x24) --- */
 .receipt-body {
-  font-family: 'VT323', 'Consolas', 'Courier New', monospace;
+  font-family: 'Roboto Mono', 'Consolas', 'Courier New', monospace;
   font-style: normal;
-  font-size: 14px; /* Proportional larger size; lines like "SIDA CONSTRUCTION & ENGINEERING" fit cleanly on 1 line */
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: -0.35px;
-  color: #1a1a1a;
-  line-height: 1.2;
-  -webkit-font-smoothing: none;
-  -moz-osx-font-smoothing: unset;
+  color: #000000;
+  line-height: 1.25;
+  font-feature-settings: "zero" 0;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
 }
 
 .receipt-row {
@@ -53,33 +55,36 @@
 
 /* --- TOTAL BLOCK TEXT STYLE --- */
 .total-label {
-  font-family: 'VT323', 'Consolas', 'Courier New', monospace;
-  font-size: 24px;
-  letter-spacing: 0.9px;
-  font-weight: bold;
-  line-height: 0.7;
-  transform: scaleY(0.95);
+  font-family: 'Oswald', 'Impact', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  transform: scaleX(1.75);
+  transform-origin: left;
+  line-height: 1.1;
+  display: block;
 }
 
 .total-amount-row {
   text-align: right;
-  font-family: 'VT323', 'Consolas', 'Courier New', monospace;
-  font-size: 24px;
-  font-weight: bold;
-  letter-spacing: 0.7px;
-  line-height: 0.7;
-  transform: scaleY(0.95);
-  margin-top: -2px;
+  font-family: 'Oswald', 'Impact', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  transform: scaleX(2.05);
+  transform-origin: right;
+  line-height: 1.1;
   white-space: nowrap;
+  display: block;
 }
 
 /* --- CASH BIRR: sits between the total and the tax lines --- */
 .cash-block {
-  font-family: 'VT323', 'Consolas', 'Courier New', monospace;
+  font-family: 'Roboto Mono', 'Consolas', monospace;
   font-style: normal;
-  -webkit-font-smoothing: none;
-  font-size: 13px;
-  font-weight: normal;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -96,7 +101,7 @@
   font-family: 'Oswald', 'Impact', sans-serif;
   font-style: italic;
   transform: skewX(-10deg);
-  font-size: 20px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: 0.5px;
   line-height: 1;
@@ -107,11 +112,11 @@
 .eltrade-tm {
   font-family: 'Oswald', 'Impact', sans-serif;
   font-style: normal;
-  font-size: 8px;
-  font-weight: bold;
+  font-size: 12px;
+  font-weight: normal;
   line-height: 1;
-  margin-left: 6px;
-  margin-top: 1px;
+  margin-left: 8px;
+  margin-top: -3px;
   flex: 0 0 auto;
 }
 
@@ -119,18 +124,23 @@
 .eltrade-emblem-svg {
   display: inline-block;
   vertical-align: middle;
-  margin-right: 6px;
+  margin-right: 8px;
   color: #000000;
   flex-shrink: 0;
+  transform: skewX(-10deg);
 }
 
 .mfe-number {
-  font-family: 'VT323', 'Consolas', 'Courier New', monospace;
-  font-size: 17px;
-  font-weight: bold;
+  font-family: 'Oswald', 'Impact', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
   letter-spacing: 0.5px;
+  transform: scaleX(1.5);
+  transform-origin: left;
+  margin-right: 24px;
   white-space: nowrap;
   color: #000000;
+  display: inline-block;
 }
 
 /* Print Rules for Thermal Printer */

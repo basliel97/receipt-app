@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import html2canvas from 'html2canvas';
 import './Receipt.css';
 
 export default function ReceiptGenerator() {
@@ -46,8 +47,461 @@ export default function ReceiptGenerator() {
     setItems(items.filter((item) => item.id !== id));
   };
 
+  const [isDirectPrinting, setIsDirectPrinting] = useState(false);
+  const [directPrintStatus, setDirectPrintStatus] = useState('');
+
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleNativePrint = async () => {
+    setIsDirectPrinting(true);
+    setDirectPrintStatus('');
+    try {
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
+      }
+
+      // Helper: convert any canvas to 1-bit monochrome ESC/POS GS v 0 raster bytes
+      const canvasToEscPosRaster = (canvas) => {
+        const targetWidth = canvas.width;
+        const targetHeight = canvas.height;
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+        const pixels = imgData.data;
+
+        const bytesPerRow = targetWidth / 8; // 48
+        const totalBytes = bytesPerRow * targetHeight;
+        const bitmap = new Uint8Array(totalBytes);
+
+        for (let y = 0; y < targetHeight; y++) {
+          for (let x = 0; x < targetWidth; x++) {
+            const idx = (y * targetWidth + x) * 4;
+            const r = pixels[idx];
+            const g = pixels[idx + 1];
+            const b = pixels[idx + 2];
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            if (lum < 185) {
+              const byteIdx = y * bytesPerRow + Math.floor(x / 8);
+              const bitIdx = 7 - (x % 8);
+              bitmap[byteIdx] |= (1 << bitIdx);
+            }
+          }
+        }
+
+        const xL = bytesPerRow % 256;
+        const xH = Math.floor(bytesPerRow / 256);
+        const yL = targetHeight % 256;
+        const yH = Math.floor(targetHeight / 256);
+
+        const header = [0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH];
+        const res = new Uint8Array(header.length + bitmap.length);
+        res.set(header, 0);
+        res.set(bitmap, header.length);
+        return res;
+      };
+
+      // 1. ELTRADE Logo Generator:
+      // Completely visible, 49px font, left-aligned with 22 dots padding, trademark not bold, 1.1 line gap (~35 dots)
+      const createTopLogoChunk = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 384;
+        canvas.height = 85;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const padLeft = 22; // reduced by 2 pixels (from 24 to 22)
+        ctx.fillStyle = '#000000';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold italic 49px "Oswald", "Impact", "Arial Black", sans-serif';
+        ctx.fillText('ELTRADE', padLeft, 35);
+
+        const brandWidth = ctx.measureText('ELTRADE').width;
+        ctx.font = 'normal 16px "Oswald", "Arial", sans-serif';
+        ctx.fillText('®', padLeft + brandWidth + 9, 15);
+
+        return canvasToEscPosRaster(canvas);
+      };
+
+      // 2. TOTAL Block Generator:
+      // Line 1: TOTAL label (left-aligned)
+      // Line 2: Total value (right-aligned, one line down)
+      // 2. TOTAL Block Generator:
+      // Line 1: TOTAL label (left-aligned, 1.80x width)
+      // Line 2: Total value (right-aligned to paper margin, star aligned to colon, width spans between them)
+      const createTotalChunk = (totalStr) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 384;
+        canvas.height = 60;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#000000';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'normal 30px "Oswald", "Arial", sans-serif';
+
+        const label = 'TOTAL :';
+        const value = '*' + totalStr;
+        const leftPad = 4;
+        const rightMargin = 6;
+        const targetRightX = 384 - rightMargin; // 378
+        const scaleLabelX = 1.80;
+
+        // Measure colon position on Line 1
+        const beforeColonW = ctx.measureText('TOTAL ').width;
+        const colonW = ctx.measureText(':').width;
+        const colonCenterX = leftPad + ((beforeColonW + colonW / 2) * scaleLabelX);
+
+        // Line 2: Calculate scaleValueX so star aligns to colon AND right edge hits targetRightX (378)
+        const starW = ctx.measureText('*').width;
+        const valueW = ctx.measureText(value).width;
+        const availSpan = targetRightX - colonCenterX;
+        let scaleValueX = availSpan / (valueW - starW / 2);
+
+        // Safety bounds
+        scaleValueX = Math.min(2.20, Math.max(1.0, scaleValueX));
+
+        // Align star center directly under colon center
+        const valueCanvasX = colonCenterX - ((starW * scaleValueX) / 2);
+
+        // Draw Line 1: TOTAL : (anchored to left at leftPad)
+        const centerY1 = 16;
+        ctx.save();
+        ctx.translate(leftPad, centerY1);
+        ctx.scale(scaleLabelX, 1.0);
+        ctx.fillText(label, 0, 0);
+        ctx.restore();
+
+        // Draw Line 2: *... (star aligned to colon, right-aligned to 378)
+        const centerY2 = 44;
+        ctx.save();
+        ctx.translate(valueCanvasX, centerY2);
+        ctx.scale(scaleValueX, 1.0);
+        ctx.fillText(value, 0, 0);
+        ctx.restore();
+
+        return canvasToEscPosRaster(canvas);
+      };
+
+      // 3. Bottom ET Emblem + MFE Number Generator:
+      // Aligned on exact center line, equal in height (31 dots), normal weight (no boldness), thin stroke, longer width (1.50x), unslashed zeros
+      const createBottomEmblemChunk = (mfeNumber) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 384;
+        canvas.height = 50;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Vector ET emblem dimensions (equal to MFE font height ~31 dots)
+        const scale = 1.95;
+        const emblemW = 34 * scale; // ~66 dots
+        const emblemH = 16 * scale; // ~31 dots
+        const gap = 14;
+
+        // Clean unslashed oval zeros, normal weight (no boldness), 30px, longer width (1.50x)
+        ctx.font = 'normal 30px "Oswald", "Arial", sans-serif';
+        const mfeStr = mfeNumber || 'MFE0066951';
+        const mfeW = ctx.measureText(mfeStr).width;
+        const scaleX = 1.50;
+
+        const totalW = emblemW + gap + (mfeW * scaleX);
+        const startX = Math.round((384 - totalW) / 2);
+        const centerY = 25;
+
+        // Draw ET monogram vector lines (thinner stroke, italic slant)
+        ctx.save();
+        ctx.translate(startX, centerY - (emblemH / 2));
+        ctx.scale(scale, scale);
+        ctx.transform(1, 0, -0.20, 1, 0, 0); // Italic slant
+        ctx.lineWidth = 1.1; // Thin stroke (not bold)
+        ctx.lineCap = 'square';
+        ctx.strokeStyle = '#000000';
+        ctx.beginPath();
+        ctx.moveTo(11, 2); ctx.lineTo(31, 2);
+        ctx.moveTo(11, 2); ctx.lineTo(2, 14);
+        ctx.moveTo(2, 14); ctx.lineTo(14, 14);
+        ctx.moveTo(23, 2); ctx.lineTo(14, 14);
+        ctx.moveTo(6.5, 8); ctx.lineTo(15, 8);
+        ctx.stroke();
+        ctx.restore();
+
+        // Draw MFE number on the exact same horizontal center line, longer width (scaleX = 1.50)
+        const mfeStartX = startX + emblemW + gap;
+        ctx.save();
+        ctx.translate(mfeStartX, centerY);
+        ctx.scale(scaleX, 1.0);
+        ctx.fillStyle = '#000000';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'normal 30px "Oswald", "Arial", sans-serif';
+        ctx.fillText(mfeStr, 0, 0);
+        ctx.restore();
+
+        return canvasToEscPosRaster(canvas);
+      };
+
+      const pad = (left, right, width = 32) => {
+        const l = String(left || '');
+        const r = String(right || '');
+        const spaces = width - l.length - r.length;
+        if (spaces <= 0) return (l + ' ' + r).slice(0, width);
+        return l + ' '.repeat(spaces) + r;
+      };
+
+      const taxableAmount = items.reduce((acc, item) => acc + item.price, 0);
+      const taxAmount = (taxableAmount * Number(formData.taxRate)) / 100;
+      const totalAmount = taxableAmount + taxAmount;
+      const totalFormatted = formatCurrency(totalAmount);
+
+      // Render graphics
+      const topLogoBytes = createTopLogoChunk();
+      const totalBytes = createTotalChunk(totalFormatted);
+      const bottomEmblemBytes = createBottomEmblemChunk(formData.mfeNumber);
+
+      const chunks = [];
+      const pushBytes = (arr) => chunks.push(new Uint8Array(arr));
+
+      const pushText = (str, align = 0, isBold = false) => {
+        const header = [0x1B, 0x61, align]; // ESC a align (0: Left, 1: Center)
+        let printMode = 0;
+        if (isBold) printMode |= 0x08; // Bold
+        header.push(0x1B, 0x21, printMode); // ESC ! n
+
+        const strBytes = [];
+        for (let i = 0; i < str.length; i++) {
+          strBytes.push(str.charCodeAt(i));
+        }
+        strBytes.push(0x0A); // \n
+        strBytes.push(0x1B, 0x21, 0x00); // Reset to standard Font A
+
+        const combined = new Uint8Array(header.length + strBytes.length);
+        combined.set(header, 0);
+        combined.set(strBytes, header.length);
+        chunks.push(combined);
+      };
+
+      // --- ASSEMBLE JOB ---
+      // Init printer + CP437
+      pushBytes([0x1B, 0x40, 0x1B, 0x74, 0x00]);
+
+      // 1. Top Logo Graphic
+      chunks.push(topLogoBytes);
+
+      // 2. Seller Info (CENTERED)
+      pushText(`TIN:${formData.tin}`, 1);
+      pushText(formData.sellerName, 1);
+      pushText(formData.companyName, 1);
+      const locLines = (formData.location || '').split('\n').filter(Boolean);
+      for (const loc of locLines) {
+        pushText(loc, 1);
+      }
+      if (formData.landmark) {
+        pushText(formData.landmark, 1);
+      }
+      pushText(`E-MOBILE:-${formData.eMobile}`, 1);
+      pushText(`TEL:-${formData.tel}`, 1);
+
+      // 3. Spacing
+      pushText('', 0);
+
+      // 4. FS No, Date & Time (LEFT)
+      pushText(`FS No. ${formData.fsNo}`, 0);
+      pushText(pad(formData.date, formData.time, 32), 0);
+
+      // 5. Spacing
+      pushText('', 0);
+
+      // 6. Buyer Info (LEFT)
+      pushText(`Buyer's TIN: ${formData.buyerTin}`, 0);
+      pushText(`Buyer's name: ${formData.buyerName}`, 0);
+      if (formData.buyerSuffix) {
+        pushText(formData.buyerSuffix, 0);
+      }
+      pushText("Buyer's phone:", 0);
+      pushText(formData.buyerPhone || '.....................', 0);
+
+      // 7. Spacing
+      pushText('', 0);
+
+      // 8. Items
+      for (const it of items) {
+        pushText(pad(it.name.toLowerCase(), `*${formatCurrency(it.price)}`, 32), 0);
+      }
+
+      // 9. Divider
+      pushText('--------------------------------', 0);
+
+      // 10. Tax
+      pushText(pad('TAXBL1', `*${formatCurrency(taxableAmount)}`, 32), 0);
+      pushText(pad(`TAX1 ${Number(formData.taxRate).toFixed(2)}%`, `*${formatCurrency(taxAmount)}`, 32), 0);
+
+      // 11. Divider
+      pushText('--------------------------------', 0);
+
+      // 12. Total Graphic (Height smaller, width bigger, close together)
+      chunks.push(totalBytes);
+
+      // 13. Cash Paid & Item Count (NO extra blank line spacer!)
+      pushText(pad('CASH BIRR', `*${formatCurrency(formData.cashBirr)}`, 32), 0);
+      pushText(pad('ITEM#', String(items.length), 32), 0);
+
+      // 14. Spacing (minimized gap between ITEM# and ERCA: 10 dots micro-feed)
+      pushBytes([0x1B, 0x4A, 10]);
+
+      // 15. ERCA (CENTERED)
+      pushText('ERCA', 1);
+
+      // 16. Bottom Emblem + MFE graphic (CENTERED & ALIGNED)
+      chunks.push(bottomEmblemBytes);
+      pushBytes([0x1B, 0x64, 0x01]); // Line feed after graphic to prevent overlap with footer!
+
+      // 17. Footer (CENTERED)
+      pushText('THANK YOU COME AGAIN!', 1);
+
+      // 18. Minimal tail feed (1 line) + Cut
+      pushBytes([0x1B, 0x64, 0x01, 0x1D, 0x56, 0x41, 0x00]);
+
+      // Combine all chunks into one buffer
+      const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+      const fullBuffer = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const c of chunks) {
+        fullBuffer.set(c, offset);
+        offset += c.length;
+      }
+
+      // Convert to base64
+      let binaryString = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < fullBuffer.length; i += chunkSize) {
+        binaryString += String.fromCharCode.apply(null, fullBuffer.subarray(i, i + chunkSize));
+      }
+      const base64 = btoa(binaryString);
+
+      const res = await fetch('/api/print-direct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64 })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setDirectPrintStatus('success-native');
+        setTimeout(() => setDirectPrintStatus(''), 4000);
+      } else {
+        setDirectPrintStatus('error');
+      }
+    } catch (err) {
+      console.error('Native print error:', err);
+      setDirectPrintStatus('error');
+    } finally {
+      setIsDirectPrinting(false);
+    }
+  };
+
+  const handleDirectPrint = async () => {
+    setIsDirectPrinting(true);
+    setDirectPrintStatus('');
+    try {
+      const receiptEl = document.querySelector('.pos-receipt');
+      if (!receiptEl) throw new Error('Receipt element not found');
+
+      // 1. Render DOM element to canvas with high fidelity
+      const canvas = await html2canvas(receiptEl, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+      });
+
+      // 2. Scale exactly to 384 dots (standard printable width for 58mm thermal printhead)
+      const TARGET_WIDTH = 384;
+      const scale = TARGET_WIDTH / canvas.width;
+      const TARGET_HEIGHT = Math.round(canvas.height * scale);
+
+      const offscreen = document.createElement('canvas');
+      offscreen.width = TARGET_WIDTH;
+      offscreen.height = TARGET_HEIGHT;
+      const ctx = offscreen.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+      ctx.drawImage(canvas, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+
+      const imgData = ctx.getImageData(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+      const pixels = imgData.data;
+
+      // 3. Build 1-bit monochrome bitmap bytes (48 bytes per row)
+      const bytesPerRow = TARGET_WIDTH / 8; // 48
+      const totalBytes = bytesPerRow * TARGET_HEIGHT;
+      const bitmap = new Uint8Array(totalBytes);
+
+      for (let y = 0; y < TARGET_HEIGHT; y++) {
+        for (let x = 0; x < TARGET_WIDTH; x++) {
+          const idx = (y * TARGET_WIDTH + x) * 4;
+          const r = pixels[idx];
+          const g = pixels[idx + 1];
+          const b = pixels[idx + 2];
+          // Standard luminance formula
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+          if (lum < 185) {
+            const byteIdx = y * bytesPerRow + Math.floor(x / 8);
+            const bitIdx = 7 - (x % 8);
+            bitmap[byteIdx] |= (1 << bitIdx);
+          }
+        }
+      }
+
+      // 4. Construct ESC/POS GS v 0 Command Structure
+      const xL = bytesPerRow % 256;
+      const xH = Math.floor(bytesPerRow / 256);
+      const yL = TARGET_HEIGHT % 256;
+      const yH = Math.floor(TARGET_HEIGHT / 256);
+
+      const header = [
+        0x1B, 0x40,                               // ESC @ (Init)
+        0x1B, 0x61, 0x01,                         // ESC a 1 (Center)
+        0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH   // GS v 0 0 xL xH yL yH
+      ];
+
+      const footer = [
+        0x1B, 0x64, 0x01,                         // ESC d 1 (Feed 1 line)
+        0x1D, 0x56, 0x41, 0x00                    // GS V A 0 (Cut if cutter present)
+      ];
+
+      const fullBuffer = new Uint8Array(header.length + bitmap.length + footer.length);
+      fullBuffer.set(header, 0);
+      fullBuffer.set(bitmap, header.length);
+      fullBuffer.set(footer, header.length + bitmap.length);
+
+      // Convert Uint8Array to base64
+      let binaryString = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < fullBuffer.length; i += chunkSize) {
+        binaryString += String.fromCharCode.apply(null, fullBuffer.subarray(i, i + chunkSize));
+      }
+      const base64 = btoa(binaryString);
+
+      const res = await fetch('/api/print-direct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64 })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setDirectPrintStatus('success-raster');
+        setTimeout(() => setDirectPrintStatus(''), 4000);
+      } else {
+        setDirectPrintStatus('error');
+      }
+    } catch (err) {
+      console.error('Direct print error:', err);
+      setDirectPrintStatus('error');
+    } finally {
+      setIsDirectPrinting(false);
+    }
   };
 
   const formatCurrency = (val) =>
@@ -193,9 +647,46 @@ export default function ReceiptGenerator() {
           </div>
         </div>
 
-        <button onClick={handlePrint} className="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-extrabold hover:bg-emerald-700 transition shadow-lg text-base tracking-wide flex items-center justify-center gap-2">
-          🖨️ Print POS Receipt (50mm)
-        </button>
+        <div className="space-y-2.5">
+          <button
+            onClick={handleNativePrint}
+            disabled={isDirectPrinting}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-extrabold transition shadow-md text-base tracking-wide flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+          >
+            {isDirectPrinting ? '⏳ Printing to BluePOS...' : '⚡ 1-Click Native Print (Exact Printer Font)'}
+          </button>
+
+          <button
+            onClick={handleDirectPrint}
+            disabled={isDirectPrinting}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+          >
+            🖼️ Graphic Raster Print (384-dot Bitmap)
+          </button>
+
+          {directPrintStatus === 'success-native' && (
+            <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold rounded-lg text-center animate-fade-in">
+              ✅ Printed with BluePOS native hardware Font A (matches info slip)!
+            </div>
+          )}
+          {directPrintStatus === 'success-raster' && (
+            <div className="p-3 bg-blue-50 border border-blue-300 text-blue-800 text-xs font-bold rounded-lg text-center animate-fade-in">
+              ✅ Receipt graphic raster successfully printed on BluePOS!
+            </div>
+          )}
+          {directPrintStatus === 'error' && (
+            <div className="p-3 bg-red-50 border border-red-300 text-red-800 text-xs font-bold rounded-lg text-center animate-fade-in">
+              ❌ Failed to send to BluePOS. Please check USB cable connection and power.
+            </div>
+          )}
+
+          <button
+            onClick={handlePrint}
+            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 py-2 rounded-xl font-bold transition text-xs flex items-center justify-center gap-2 cursor-pointer"
+          >
+            🖨️ Browser Print Dialog (50mm / BluePOS)
+          </button>
+        </div>
       </div>
 
 
@@ -204,7 +695,7 @@ export default function ReceiptGenerator() {
         <div className="pos-receipt receipt-body">
           
           {/* Top Trademark */}
-          <div className="text-left pl-5 mb-2 pt-0.5">
+          <div id="receipt-top-logo" className="text-left pl-5 mb-2 pt-0.5 bg-white inline-block">
             <div className="eltrade-container">
               <span className="eltrade-brand">ELTRADE</span>
               <span className="eltrade-tm">®</span>
@@ -259,8 +750,8 @@ export default function ReceiptGenerator() {
 
           <div className="receipt-divider"></div>
 
-          <div className="mt-1">
-            <div className="total-label">TOTAL:</div>
+          <div className="my-1">
+            <div className="total-label">TOTAL :</div>
             <div className="total-amount-row">*{formatCurrency(totalAmount)}</div>
           </div>
 
@@ -274,27 +765,29 @@ export default function ReceiptGenerator() {
           </div>
 
           {/* Bottom Trademark */}
-          <div className="text-center mt-2.5">
+          <div className="text-center mt-1">
             <div className="receipt-row">ERCA</div>
-            <div className="flex justify-center items-center mt-1">
-              <svg
-                className="eltrade-emblem-svg"
-                width="24"
-                height="13"
-                viewBox="0 0 34 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.25"
-                strokeLinecap="square"
-                strokeLinejoin="miter"
-              >
-                <line x1="11" y1="2" x2="31" y2="2" />
-                <line x1="11" y1="2" x2="2" y2="14" />
-                <line x1="2" y1="14" x2="14" y2="14" />
-                <line x1="23" y1="2" x2="14" y2="14" />
-                <line x1="6.5" y1="8" x2="15" y2="8" />
-              </svg>
-              <span className="mfe-number">{formData.mfeNumber}</span>
+            <div className="flex justify-center mt-1">
+              <div id="receipt-bottom-emblem" className="flex items-center justify-center bg-white px-2 py-0.5">
+                <svg
+                  className="eltrade-emblem-svg"
+                  width="34"
+                  height="16"
+                  viewBox="0 0 34 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.1"
+                  strokeLinecap="square"
+                  strokeLinejoin="miter"
+                >
+                  <line x1="11" y1="2" x2="31" y2="2" />
+                  <line x1="11" y1="2" x2="2" y2="14" />
+                  <line x1="2" y1="14" x2="14" y2="14" />
+                  <line x1="23" y1="2" x2="14" y2="14" />
+                  <line x1="6.5" y1="8" x2="15" y2="8" />
+                </svg>
+                <span className="mfe-number">{formData.mfeNumber}</span>
+              </div>
             </div>
           </div>
 
