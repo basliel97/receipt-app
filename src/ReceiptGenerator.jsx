@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import html2canvas from 'html2canvas';
 import './Receipt.css';
 
@@ -147,117 +147,6 @@ export default function ReceiptGenerator() {
 
   const [isDirectPrinting, setIsDirectPrinting] = useState(false);
   const [directPrintStatus, setDirectPrintStatus] = useState('');
-  const [bridgeStatus, setBridgeStatus] = useState({ connected: false, printer: null, checking: true });
-  const [showSetupModal, setShowSetupModal] = useState(false);
-
-  // Poll Local Print Bridge status (http://127.0.0.1:9100)
-  useEffect(() => {
-    let isMounted = true;
-    const checkBridge = async () => {
-      try {
-        const controller = new AbortController();
-        const tid = setTimeout(() => controller.abort(), 1200);
-        const res = await fetch('http://127.0.0.1:9100/status', { signal: controller.signal });
-        clearTimeout(tid);
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && data.status === 'ok') {
-            setBridgeStatus({ connected: true, printer: data.activePrinter || 'BluePOS', checking: false });
-            return;
-          }
-        }
-      } catch (e) {
-        // bridge offline
-      }
-      if (isMounted) {
-        setBridgeStatus((prev) => ({ ...prev, connected: false, checking: false }));
-      }
-    };
-
-    checkBridge();
-    const interval = setInterval(checkBridge, 3500);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
-
-  // Dispatch raw ESC/POS binary data to local bridge or dev server
-  const sendRawPrintJob = async (fullBuffer) => {
-    let binaryString = '';
-    const chunkSize = 8192;
-    for (let i = 0; i < fullBuffer.length; i += chunkSize) {
-      binaryString += String.fromCharCode.apply(null, fullBuffer.subarray(i, i + chunkSize));
-    }
-    const base64 = btoa(binaryString);
-
-    const endpoints = [
-      'http://127.0.0.1:9100/print',
-      'http://localhost:9100/print',
-      '/api/print-direct'
-    ];
-
-    for (const url of endpoints) {
-      try {
-        const controller = new AbortController();
-        const tid = setTimeout(() => controller.abort(), 2500);
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base64, printerName: 'BluePOS' }),
-          signal: controller.signal
-        });
-        clearTimeout(tid);
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success) {
-            return { success: true, printer: data.printer || 'BluePOS' };
-          }
-        }
-      } catch (err) {
-        // Try next candidate endpoint
-      }
-    }
-
-    return { success: false };
-  };
-
-  // Direct WebUSB fallback
-  const printViaWebUsb = async (buffer) => {
-    if (!navigator.usb) throw new Error('WebUSB is not supported in this browser.');
-    let devices = await navigator.usb.getDevices();
-    let device = devices[0];
-    if (!device) {
-      device = await navigator.usb.requestDevice({ filters: [] });
-    }
-    await device.open();
-    if (device.configuration === null) {
-      await device.selectConfiguration(1);
-    }
-    let ifaceNum = 0;
-    let endpointNum = null;
-    for (const iface of device.configuration.interfaces) {
-      for (const alt of iface.alternates) {
-        const outEp = alt.endpoints.find(e => e.direction === 'out');
-        if (outEp) {
-          ifaceNum = iface.interfaceNumber;
-          endpointNum = outEp.endpointNumber;
-          break;
-        }
-      }
-      if (endpointNum !== null) break;
-    }
-    if (endpointNum === null) throw new Error('No OUT endpoint found on USB device.');
-    await device.claimInterface(ifaceNum);
-    const chunkSize = 1024;
-    for (let i = 0; i < buffer.length; i += chunkSize) {
-      await device.transferOut(endpointNum, buffer.subarray(i, i + chunkSize));
-    }
-    await device.releaseInterface(ifaceNum);
-    await device.close();
-    return true;
-  };
 
   const handlePrint = () => {
     window.print();
@@ -587,31 +476,26 @@ export default function ReceiptGenerator() {
         offset += c.length;
       }
 
-      // Send raw job to Bridge or Dev Server
-      const result = await sendRawPrintJob(fullBuffer);
-      if (result.success) {
+      // Convert to base64
+      let binaryString = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < fullBuffer.length; i += chunkSize) {
+        binaryString += String.fromCharCode.apply(null, fullBuffer.subarray(i, i + chunkSize));
+      }
+      const base64 = btoa(binaryString);
+
+      const res = await fetch('/api/print-direct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64 })
+      });
+
+      const data = await res.json();
+      if (data.success) {
         setDirectPrintStatus('success-native');
         setTimeout(() => setDirectPrintStatus(''), 4000);
       } else {
-        // Fallback: Check if WebUSB device is already paired
-        let usbSuccess = false;
-        if (navigator.usb) {
-          try {
-            const paired = await navigator.usb.getDevices();
-            if (paired.length > 0) {
-              await printViaWebUsb(fullBuffer);
-              setDirectPrintStatus('success-native');
-              setTimeout(() => setDirectPrintStatus(''), 4000);
-              usbSuccess = true;
-            }
-          } catch (usbErr) {
-            console.warn('Paired WebUSB print failed:', usbErr);
-          }
-        }
-        if (!usbSuccess) {
-          setShowSetupModal(true);
-          setDirectPrintStatus('offline');
-        }
+        setDirectPrintStatus('error');
       }
     } catch (err) {
       console.error('Native print error:', err);
@@ -696,13 +580,25 @@ export default function ReceiptGenerator() {
       fullBuffer.set(footer, header.length + bitmap.length);
 
       // Convert Uint8Array to base64
-      const result = await sendRawPrintJob(fullBuffer);
-      if (result.success) {
+      let binaryString = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < fullBuffer.length; i += chunkSize) {
+        binaryString += String.fromCharCode.apply(null, fullBuffer.subarray(i, i + chunkSize));
+      }
+      const base64 = btoa(binaryString);
+
+      const res = await fetch('/api/print-direct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64 })
+      });
+
+      const data = await res.json();
+      if (data.success) {
         setDirectPrintStatus('success-raster');
         setTimeout(() => setDirectPrintStatus(''), 4000);
       } else {
-        setShowSetupModal(true);
-        setDirectPrintStatus('offline');
+        setDirectPrintStatus('error');
       }
     } catch (err) {
       console.error('Direct print error:', err);
@@ -1013,40 +909,6 @@ export default function ReceiptGenerator() {
         </div>
 
         <div className="space-y-2.5">
-          {/* Bridge Status Indicator Banner */}
-          {bridgeStatus.connected ? (
-            <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-semibold shadow-xs">
-              <span className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
-                Bridge Connected: <strong>{bridgeStatus.printer}</strong>
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowSetupModal(true)}
-                className="text-emerald-700 hover:text-emerald-900 underline text-[11px] cursor-pointer"
-              >
-                Printer Settings
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-medium shadow-xs">
-              <span className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-400"></span>
-                <span>Printer Bridge: <strong className="text-amber-800">Offline</strong></span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowSetupModal(true)}
-                className="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold transition shadow-xs cursor-pointer"
-              >
-                Connect Printer
-              </button>
-            </div>
-          )}
-
           <button
             onClick={handleNativePrint}
             disabled={isDirectPrinting}
@@ -1071,18 +933,6 @@ export default function ReceiptGenerator() {
           {directPrintStatus === 'success-raster' && (
             <div className="p-3 bg-blue-50 border border-blue-300 text-blue-800 text-xs font-bold rounded-lg text-center animate-fade-in">
               ✅ Receipt graphic raster successfully printed on BluePOS!
-            </div>
-          )}
-          {directPrintStatus === 'offline' && (
-            <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg text-center animate-fade-in flex flex-col gap-1 items-center">
-              <span>⚠️ Local Print Bridge is offline.</span>
-              <button
-                type="button"
-                onClick={() => setShowSetupModal(true)}
-                className="underline font-bold text-amber-800 hover:text-amber-950 cursor-pointer"
-              >
-                Click here to launch ReceiptPrintBridge.bat on this PC
-              </button>
             </div>
           )}
           {directPrintStatus === 'error' && (
@@ -1221,119 +1071,6 @@ export default function ReceiptGenerator() {
 
         </div>
       </div>
-
-      {/* PRINTER SETUP MODAL */}
-      {showSetupModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in no-print">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 relative">
-            <button
-              type="button"
-              onClick={() => setShowSetupModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition cursor-pointer text-lg font-bold"
-            >
-              ✕
-            </button>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-xl">
-                🖨️
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Thermal Printer Connection</h3>
-                <p className="text-xs text-slate-500">Connect BluePOS or any ESC/POS thermal receipt printer</p>
-              </div>
-            </div>
-
-            {/* Current Bridge Status Banner */}
-            <div className={`p-3.5 rounded-xl mb-4 border flex items-center justify-between text-xs ${
-              bridgeStatus.connected 
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
-                : 'bg-amber-50 border-amber-200 text-amber-900'
-            }`}>
-              <div className="flex items-center gap-2">
-                <span className={`h-2.5 w-2.5 rounded-full ${bridgeStatus.connected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></span>
-                <span>
-                  {bridgeStatus.connected ? (
-                    <>Bridge Status: <strong>Connected to {bridgeStatus.printer}</strong></>
-                  ) : (
-                    <>Bridge Status: <strong>Searching for Local Bridge...</strong></>
-                  )}
-                </span>
-              </div>
-              {bridgeStatus.connected ? (
-                <span className="font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">Ready</span>
-              ) : (
-                <span className="font-semibold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-md">Offline</span>
-              )}
-            </div>
-
-            {/* Option 1: 1-Click Bridge (Recommended) */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">Method 1: Local Print Bridge (Recommended)</span>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Fastest & Silent</span>
-              </div>
-              <p className="text-xs text-slate-600 mb-3">
-                Since Vercel is hosted on the cloud, a lightweight local bridge connects the web app directly to your physical USB printer without modifying drivers.
-              </p>
-
-              <ol className="text-xs text-slate-600 space-y-1.5 mb-3 pl-4 list-decimal">
-                <li>Download or use <strong>ReceiptPrintBridge.bat</strong> on the PC connected to the printer.</li>
-                <li>Double-click it to start the background bridge.</li>
-                <li>That's it! As soon as it opens, the status above turns green and you can print instantly.</li>
-              </ol>
-
-              <div className="flex gap-2">
-                <a
-                  href="/ReceiptPrintBridge.bat"
-                  download="ReceiptPrintBridge.bat"
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-3 rounded-lg text-center transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                >
-                  ⬇️ Download ReceiptPrintBridge.bat
-                </a>
-              </div>
-              <p className="text-[11px] text-slate-400 mt-2 text-center">
-                Tip: Put a shortcut in Windows <code>shell:startup</code> so it starts automatically with your PC.
-              </p>
-            </div>
-
-            {/* Option 2: Direct USB Connect (WebUSB) */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">Method 2: Direct USB Connect</span>
-                <span className="text-[10px] bg-slate-200 text-slate-700 font-medium px-1.5 py-0.5 rounded">WebUSB</span>
-              </div>
-              <p className="text-xs text-slate-600 mb-3">
-                Pair directly via browser. (On Windows, requires WinUSB driver if USBPRINT locks the port).
-              </p>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    await printViaWebUsb(new Uint8Array([0x1B, 0x40]));
-                    alert('Printer connected successfully via WebUSB!');
-                  } catch (err) {
-                    alert('WebUSB notice: ' + err.message + '\n\nOn Windows, the Local Print Bridge (Method 1) is recommended because Windows printer drivers lock the direct USB port.');
-                  }
-                }}
-                className="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold py-2 px-3 rounded-lg transition cursor-pointer"
-              >
-                🔌 Pair USB Device in Browser
-              </button>
-            </div>
-
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowSetupModal(false)}
-                className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 px-4 rounded-lg cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
 
