@@ -11,23 +11,28 @@ export default function ReceiptGenerator() {
     landmark: 'AROUND ABBA GADA',
     eMobile: '0983461460',
     tel: '0910629988',
-    fsNo: '00000023',
-    date: '19/08/2026',
-    time: '11:16:10',
-    buyerTin: '0091392494',
-    buyerName: 'SMT CONSTRUCTION',
+    fsNo: '00000021',
+    date: '29/07/2026',
+    time: '10:57:49',
+    buyerTin: '0003380590',
+    buyerName: 'ANMOL PRODUCTS',
     buyerPhone: '',
-    buyerSuffix: 'PLC',
+    buyerSuffix: 'ETHIOPIA PLC',
     taxRate: 15.0,
-    cashBirr: 400000.00,
+    cashBirr: 276000.00,
     mfeNumber: 'MFE0066951',
   });
 
   const [items, setItems] = useState([
-    { id: 1, name: 'payment one', price: 347826.09 }
+    { id: 1, name: 'GRAVEL', quantity: 16, unitPrice: 4375.00, price: 70000.00 },
+    { id: 2, name: 'SAND', quantity: 16, unitPrice: 10625.00, price: 170000.00 }
   ]);
 
+  const [itemMode, setItemMode] = useState('qty'); // 'qty' or 'flat'
+  const [editingItemId, setEditingItemId] = useState(null);
   const [newItemName, setNewItemName] = useState('');
+  const [newItemQty, setNewItemQty] = useState('');
+  const [newItemUnitPrice, setNewItemUnitPrice] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
 
   const handleChange = (e) => {
@@ -35,15 +40,108 @@ export default function ReceiptGenerator() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddItem = (e) => {
-    e.preventDefault();
-    if (!newItemName || !newItemPrice) return;
-    setItems([...items, { id: Date.now(), name: newItemName.toLowerCase(), price: parseFloat(newItemPrice) }]);
+  const handleQtyChange = (val) => {
+    setNewItemQty(val);
+    if (val && newItemUnitPrice) {
+      const q = parseFloat(val);
+      const u = parseFloat(newItemUnitPrice);
+      if (!isNaN(q) && !isNaN(u)) {
+        setNewItemPrice((q * u).toFixed(2));
+      }
+    }
+  };
+
+  const handleUnitPriceChange = (val) => {
+    setNewItemUnitPrice(val);
+    if (newItemQty && val) {
+      const q = parseFloat(newItemQty);
+      const u = parseFloat(val);
+      if (!isNaN(q) && !isNaN(u)) {
+        setNewItemPrice((q * u).toFixed(2));
+      }
+    }
+  };
+
+  const handleTotalPriceChange = (val) => {
+    setNewItemPrice(val);
+    if (itemMode === 'qty' && newItemQty && parseFloat(newItemQty) > 0 && val) {
+      const q = parseFloat(newItemQty);
+      const t = parseFloat(val);
+      if (!isNaN(q) && !isNaN(t) && q > 0) {
+        setNewItemUnitPrice((t / q).toFixed(2));
+      }
+    }
+  };
+
+  const handleSaveItem = (e) => {
+    e?.preventDefault();
+    if (!newItemName.trim()) return;
+
+    const priceVal = parseFloat(newItemPrice);
+    if (isNaN(priceVal) || priceVal <= 0) return;
+
+    const isQty = itemMode === 'qty' && newItemQty && parseFloat(newItemQty) > 0;
+    const qtyVal = isQty ? parseFloat(newItemQty) : null;
+    const unitPriceVal = isQty ? (parseFloat(newItemUnitPrice) || (priceVal / qtyVal)) : null;
+
+    if (editingItemId) {
+      setItems(items.map((item) => {
+        if (item.id === editingItemId) {
+          return {
+            ...item,
+            name: newItemName.trim(),
+            quantity: qtyVal,
+            unitPrice: unitPriceVal,
+            price: priceVal
+          };
+        }
+        return item;
+      }));
+      setEditingItemId(null);
+    } else {
+      setItems([
+        ...items,
+        {
+          id: Date.now(),
+          name: newItemName.trim(),
+          quantity: qtyVal,
+          unitPrice: unitPriceVal,
+          price: priceVal
+        }
+      ]);
+    }
+
     setNewItemName('');
+    setNewItemQty('');
+    setNewItemUnitPrice('');
+    setNewItemPrice('');
+  };
+
+  const handleEditItem = (item) => {
+    setEditingItemId(item.id);
+    setNewItemName(item.name);
+    if (item.quantity && Number(item.quantity) > 0) {
+      setItemMode('qty');
+      setNewItemQty(String(item.quantity));
+      setNewItemUnitPrice(item.unitPrice ? String(item.unitPrice) : '');
+    } else {
+      setItemMode('flat');
+      setNewItemQty('');
+      setNewItemUnitPrice('');
+    }
+    setNewItemPrice(String(item.price));
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItemId(null);
+    setNewItemName('');
+    setNewItemQty('');
+    setNewItemUnitPrice('');
     setNewItemPrice('');
   };
 
   const handleRemoveItem = (id) => {
+    if (editingItemId === id) handleCancelEdit();
     setItems(items.filter((item) => item.id !== id));
   };
 
@@ -438,7 +536,13 @@ export default function ReceiptGenerator() {
 
       // 8. Items
       for (const it of items) {
-        pushText(pad(it.name.toLowerCase(), `*${formatCurrency(it.price)}`, 32), 0);
+        const hasQty = it.quantity && Number(it.quantity) > 0 && it.unitPrice && Number(it.unitPrice) > 0;
+        if (hasQty) {
+          const qtyStr = Number(it.quantity) % 1 === 0 ? Number(it.quantity).toString() : Number(it.quantity).toFixed(2);
+          const unitPriceStr = Number(it.unitPrice).toFixed(2);
+          pushText(`   ${qtyStr} x ${unitPriceStr} =`, 0);
+        }
+        pushText(pad(it.name, `*${formatCurrency(it.price)}`, 32), 0);
       }
 
       // 9. Divider
@@ -706,29 +810,177 @@ export default function ReceiptGenerator() {
         </div>
 
         {/* Line Items Manager */}
-        <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-          <h3 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Line Items (Payment/Goods)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="md:col-span-1.5">
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Item Name</label>
-              <input type="text" placeholder="e.g. payment one" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-            </div>
+        <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Line Items (Payment/Goods)</h3>
+            <span className="text-[11px] text-slate-500 font-medium">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+          </div>
+
+          {/* Mode Switcher Tabs */}
+          <div className="flex bg-slate-200/80 p-1 rounded-lg gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setItemMode('qty');
+                if (newItemQty && newItemUnitPrice) {
+                  const q = parseFloat(newItemQty);
+                  const u = parseFloat(newItemUnitPrice);
+                  if (!isNaN(q) && !isNaN(u)) setNewItemPrice((q * u).toFixed(2));
+                }
+              }}
+              className={`flex-1 py-1.5 px-2 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                itemMode === 'qty'
+                  ? 'bg-white text-blue-600 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              <span>📦 Quantity × Unit Price</span>
+              <span className="text-[10px] opacity-75 font-normal hidden sm:inline">(e.g. 16 x 4375.00)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setItemMode('flat')}
+              className={`flex-1 py-1.5 px-2 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                itemMode === 'flat'
+                  ? 'bg-white text-blue-600 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              <span>⚡ Flat Price Only</span>
+              <span className="text-[10px] opacity-75 font-normal hidden sm:inline">(Single line)</span>
+            </button>
+          </div>
+
+          {/* Inputs Grid */}
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Price (ETB)</label>
-              <input type="number" placeholder="0.00" value={newItemPrice} onChange={(e) => setNewItemPrice(e.target.value)} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Item Name / Description</label>
+              <input
+                type="text"
+                placeholder={itemMode === 'qty' ? 'e.g. GRAVEL or SAND' : 'e.g. payment one'}
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
+              />
             </div>
-            <div className="flex items-end">
-              <button onClick={handleAddItem} className="w-full bg-blue-600 text-white font-bold p-2.5 rounded-lg text-sm hover:bg-blue-700 transition shadow-sm">+ Add Item</button>
+
+            {itemMode === 'qty' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Quantity (Qty)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="e.g. 16"
+                    value={newItemQty}
+                    onChange={(e) => handleQtyChange(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Unit Price (ETB)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="e.g. 4375.00"
+                    value={newItemUnitPrice}
+                    onChange={(e) => handleUnitPriceChange(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">
+                    Total Amount (ETB)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="0.00"
+                    value={newItemPrice}
+                    onChange={(e) => handleTotalPriceChange(e.target.value)}
+                    className="w-full p-2 bg-blue-50/60 border border-blue-200 font-semibold text-blue-900 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Price / Amount (ETB)</label>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="0.00"
+                  value={newItemPrice}
+                  onChange={(e) => setNewItemPrice(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none"
+                />
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleSaveItem}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {editingItemId ? '✓ Update Item' : '+ Add Item to Receipt'}
+              </button>
+              {editingItemId && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-3 rounded-lg text-xs transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           </div>
-          
-          <ul className="space-y-2 mt-3 max-h-44 overflow-y-auto pr-1">
-            {items.map((item) => (
-              <li key={item.id} className="flex justify-between items-center bg-white p-3 border border-slate-200 rounded-lg text-sm shadow-xs">
-                <span className="font-medium text-slate-800 uppercase">{item.name} — <strong className="text-blue-600">*{formatCurrency(item.price)}</strong></span>
-                <button onClick={() => handleRemoveItem(item.id)} className="text-red-500 font-bold hover:text-red-700 px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition">Remove</button>
-              </li>
-            ))}
+
+          {/* List of items */}
+          <ul className="space-y-2 mt-2 max-h-52 overflow-y-auto pr-1">
+            {items.map((item) => {
+              const hasQty = item.quantity && Number(item.quantity) > 0 && item.unitPrice && Number(item.unitPrice) > 0;
+              const isSelected = editingItemId === item.id;
+              return (
+                <li
+                  key={item.id}
+                  className={`flex justify-between items-center p-3 border rounded-xl text-sm transition ${
+                    isSelected
+                      ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-300'
+                      : 'bg-white border-slate-200 shadow-xs'
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-800">{item.name}</span>
+                    {hasQty ? (
+                      <span className="text-xs text-slate-500 font-mono mt-0.5">
+                        {item.quantity} × {Number(item.unitPrice).toFixed(2)} = <strong className="text-blue-600">*{formatCurrency(item.price)}</strong>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-blue-600 font-bold font-mono mt-0.5">
+                        *{formatCurrency(item.price)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleEditItem(item)}
+                      className="text-xs text-blue-600 font-semibold px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveItem(item.id)}
+                      className="text-xs text-red-500 font-semibold px-2 py-1 rounded bg-red-50 hover:bg-red-100 transition cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -741,7 +993,16 @@ export default function ReceiptGenerator() {
               <input type="number" name="taxRate" value={formData.taxRate} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Cash Paid (ETB)</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-semibold text-slate-600">Cash Paid (ETB)</label>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, cashBirr: totalAmount }))}
+                  className="text-[10px] text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer"
+                >
+                  = Match Total
+                </button>
+              </div>
               <input type="number" name="cashBirr" value={formData.cashBirr} onChange={handleChange} className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div>
@@ -879,12 +1140,25 @@ export default function ReceiptGenerator() {
           </div>
 
           <div className="mt-2 space-y-0.5">
-            {items.map((item) => (
-              <div key={item.id} className="flex-row my-0.5">
-                <span>{item.name}</span>
-                <span className="nowrap">*{formatCurrency(item.price)}</span>
-              </div>
-            ))}
+            {items.map((item) => {
+              const hasQty = item.quantity && Number(item.quantity) > 0 && item.unitPrice && Number(item.unitPrice) > 0;
+              const qtyStr = Number(item.quantity) % 1 === 0 ? Number(item.quantity).toString() : Number(item.quantity).toFixed(2);
+              const unitPriceStr = Number(item.unitPrice).toFixed(2);
+
+              return (
+                <div key={item.id} className="my-0.5">
+                  {hasQty && (
+                    <div className="receipt-row nowrap" style={{ paddingLeft: '14px' }}>
+                      {qtyStr} x {unitPriceStr} =
+                    </div>
+                  )}
+                  <div className="flex-row">
+                    <span>{item.name}</span>
+                    <span className="nowrap">*{formatCurrency(item.price)}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="receipt-divider"></div>
