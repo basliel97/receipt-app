@@ -102,6 +102,13 @@
   display: inline-block;
 }
 
+.cash-star {
+  font-family: 'Roboto Mono', 'Consolas', monospace;
+  font-weight: 600;
+  display: inline-block;
+  margin-right: 2px;
+}
+
 /* --- CASH BIRR: sits between the total and the tax lines --- */
 .cash-block {
   font-family: 'Roboto Mono', 'Consolas', monospace;

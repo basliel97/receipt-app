@@ -236,10 +236,11 @@ export default function ReceiptGenerator() {
 
         ctx.fillStyle = '#000000';
         ctx.textBaseline = 'middle';
-        ctx.font = '300 24px "Oswald", "Arial", sans-serif';
+
+        const starFont = '600 24px "Roboto Mono", "Consolas", monospace';
+        const numFont = '300 24px "Oswald", "Arial", sans-serif';
 
         const label = 'TOTAL :';
-        const value = '*' + totalStr;
         const leftPad = 0; // Flush left alignment
         const rightMargin = 4;
         const targetRightX = 384 - rightMargin; // 380
@@ -247,53 +248,87 @@ export default function ReceiptGenerator() {
 
         if (isTwoLine) {
           // Line 1: Measure colon position
+          ctx.font = numFont;
           const beforeColonW = ctx.measureText('TOTAL ').width;
           const colonW = ctx.measureText(':').width;
           const colonCenterX = leftPad + ((beforeColonW + colonW / 2) * scaleLabelX);
 
-          // Line 2: Scale value so star aligns under colon and ends at rightMargin
+          // Line 2: Star (same star as CASH BIRR) + digits
+          ctx.font = starFont;
           const starW = ctx.measureText('*').width;
-          const valueW = ctx.measureText(value).width;
+
+          ctx.font = numFont;
+          const numW = ctx.measureText(totalStr).width;
+
           const availSpan = targetRightX - colonCenterX;
-          let scaleValueX = availSpan / (valueW - starW / 2);
+          let scaleValueX = availSpan / (numW + starW / 2);
           scaleValueX = Math.min(2.40, Math.max(1.1, scaleValueX));
 
-          const valueCanvasX = colonCenterX - ((starW * scaleValueX) / 2);
+          const starCanvasX = colonCenterX - ((starW * scaleValueX) / 2);
+          const numCanvasX = starCanvasX + (starW * scaleValueX);
 
           // Draw Line 1 (TOTAL :)
           const centerY1 = 12;
           ctx.save();
           ctx.translate(leftPad, centerY1);
           ctx.scale(scaleLabelX, 1.0);
+          ctx.font = numFont;
           ctx.fillText(label, 0, 0);
           ctx.restore();
 
-          // Draw Line 2 (*...)
+          // Draw Line 2: Star (CASH BIRR font)
           const centerY2 = 36;
           ctx.save();
-          ctx.translate(valueCanvasX, centerY2);
+          ctx.translate(starCanvasX, centerY2);
           ctx.scale(scaleValueX, 1.0);
-          ctx.fillText(value, 0, 0);
+          ctx.font = starFont;
+          ctx.fillText('*', 0, 0);
+          ctx.restore();
+
+          // Draw Line 2: Digits (Oswald font)
+          ctx.save();
+          ctx.translate(numCanvasX, centerY2);
+          ctx.scale(scaleValueX, 1.0);
+          ctx.font = numFont;
+          ctx.fillText(totalStr, 0, 0);
           ctx.restore();
         } else {
           // Single Line layout:
-          // Left: TOTAL : (scaleLabelX = 2.05)
-          // Right: *... right-aligned to targetRightX with scaleValueX = 1.95
+          // Left: TOTAL :
           const centerY = 14;
           ctx.save();
           ctx.translate(leftPad, centerY);
           ctx.scale(scaleLabelX, 1.0);
+          ctx.font = numFont;
           ctx.fillText(label, 0, 0);
           ctx.restore();
 
-          const valueW = ctx.measureText(value).width;
-          const scaleValueX = 1.95;
-          const valueCanvasX = targetRightX - (valueW * scaleValueX);
+          // Right: Star (same star as CASH BIRR) + digits
+          ctx.font = starFont;
+          const starW = ctx.measureText('*').width;
 
+          ctx.font = numFont;
+          const numW = ctx.measureText(totalStr).width;
+
+          const scaleValueX = 1.95;
+          const totalValW = (starW + numW) * scaleValueX;
+          const starCanvasX = targetRightX - totalValW;
+          const numCanvasX = starCanvasX + (starW * scaleValueX);
+
+          // Draw Star (CASH BIRR font)
           ctx.save();
-          ctx.translate(valueCanvasX, centerY);
+          ctx.translate(starCanvasX, centerY);
           ctx.scale(scaleValueX, 1.0);
-          ctx.fillText(value, 0, 0);
+          ctx.font = starFont;
+          ctx.fillText('*', 0, 0);
+          ctx.restore();
+
+          // Draw Digits (Oswald font)
+          ctx.save();
+          ctx.translate(numCanvasX, centerY);
+          ctx.scale(scaleValueX, 1.0);
+          ctx.font = numFont;
+          ctx.fillText(totalStr, 0, 0);
           ctx.restore();
         }
 
@@ -1044,12 +1079,16 @@ export default function ReceiptGenerator() {
             {Math.floor(Math.abs(Number(totalAmount) || 0)).toString().length >= 6 ? (
               <>
                 <div className="total-label">TOTAL :</div>
-                <div className="total-amount-row">*{formatCurrency(totalAmount)}</div>
+                <div className="total-amount-row">
+                  <span className="cash-star">*</span>{formatCurrency(totalAmount)}
+                </div>
               </>
             ) : (
               <div className="flex justify-between items-baseline">
                 <span className="total-label-inline">TOTAL :</span>
-                <span className="total-amount-inline">*{formatCurrency(totalAmount)}</span>
+                <span className="total-amount-inline">
+                  <span className="cash-star">*</span>{formatCurrency(totalAmount)}
+                </span>
               </div>
             )}
           </div>
