@@ -455,15 +455,15 @@ export default function ReceiptGenerator() {
       pushText(`E-MOBILE:-${formData.eMobile}`, 1);
       pushText(`TEL:-${formData.tel}`, 1);
 
-      // 3. Spacing (micro-feed between seller info and FS No)
-      pushBytes([0x1B, 0x4A, 10]);
+      // 3. Spacing (top of FS block)
+      pushText('', 0);
 
       // 4. FS No, Date & Time (LEFT)
       pushText(`FS No. ${formData.fsNo}`, 0);
       pushText(pad(formData.date, formData.time, 32), 0);
 
-      // 5. Spacing (micro-feed between Date/Time and Buyer Info)
-      pushBytes([0x1B, 0x4A, 8]);
+      // 5. Spacing (bottom of FS block)
+      pushText('', 0);
 
       // 6. Buyer Info (LEFT)
       pushText(`Buyer's TIN: ${formData.buyerTin}`, 0);
@@ -1024,7 +1024,7 @@ export default function ReceiptGenerator() {
             <div className="receipt-row nowrap">TEL:-{formData.tel}</div>
           </div>
 
-          <div className="mt-1">
+          <div className="my-2">
             <div className="receipt-row nowrap">FS No. {formData.fsNo}</div>
             <div className="flex-row">
               <span className="nowrap">{formData.date}</span>
@@ -1032,7 +1032,7 @@ export default function ReceiptGenerator() {
             </div>
           </div>
 
-          <div className="space-y-0.5 mt-1">
+          <div className="space-y-0.5">
             <div className="receipt-row nowrap">Buyer's TIN: {formData.buyerTin}</div>
             <div className="receipt-row nowrap">Buyer's name: {formData.buyerName}</div>
             {formData.buyerSuffix && <div className="receipt-row nowrap">{formData.buyerSuffix}</div>}
