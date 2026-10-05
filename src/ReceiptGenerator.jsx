@@ -200,121 +200,138 @@ export default function ReceiptGenerator() {
       };
 
       // 1. ELTRADE Logo Generator:
-      // Completely visible, 49px font, left-aligned with 22 dots padding, trademark not bold, 1.1 line gap (~35 dots)
+      // Completely visible, 49px font, left-aligned with 22 dots padding, trademark not bold, compact vertical height (68 dots)
       const createTopLogoChunk = () => {
         const canvas = document.createElement('canvas');
         canvas.width = 384;
-        canvas.height = 85;
+        canvas.height = 68;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        const padLeft = 22; // reduced by 2 pixels (from 24 to 22)
+        const padLeft = 22;
         ctx.fillStyle = '#000000';
         ctx.textBaseline = 'middle';
         ctx.font = 'bold italic 49px "Oswald", "Impact", "Arial Black", sans-serif';
-        ctx.fillText('ELTRADE', padLeft, 35);
+        ctx.fillText('ELTRADE', padLeft, 34);
 
         const brandWidth = ctx.measureText('ELTRADE').width;
         ctx.font = 'normal 16px "Oswald", "Arial", sans-serif';
-        ctx.fillText('®', padLeft + brandWidth + 9, 15);
+        ctx.fillText('®', padLeft + brandWidth + 9, 14);
 
         return canvasToEscPosRaster(canvas);
       };
 
       // 2. TOTAL Block Generator:
-      // Line 1: TOTAL label (left-aligned)
-      // Line 2: Total value (right-aligned, one line down)
-      // 2. TOTAL Block Generator:
-      // Line 1: TOTAL label (left-aligned, 1.80x width)
-      // Line 2: Total value (right-aligned to paper margin, star aligned to colon, width spans between them)
-      const createTotalChunk = (totalStr) => {
+      // Compact height (24px font, light weight 300), leftPad = 0 (flush left alignment).
+      // If < 6 digits before decimal point: single line with TOTAL : on left and *... on right.
+      // If >= 6 digits: 2 lines (Line 1: TOTAL :, Line 2: *... with star under colon).
+      const createTotalChunk = (totalStr, isTwoLine) => {
         const canvas = document.createElement('canvas');
         canvas.width = 384;
-        canvas.height = 60;
+        canvas.height = isTwoLine ? 48 : 28;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.fillStyle = '#000000';
         ctx.textBaseline = 'middle';
-        ctx.font = '300 30px "Oswald", "Arial", sans-serif';
+        ctx.font = '300 24px "Oswald", "Arial", sans-serif';
 
         const label = 'TOTAL :';
         const value = '*' + totalStr;
-        const leftPad = 4;
-        const rightMargin = 6;
-        const targetRightX = 384 - rightMargin; // 378
+        const leftPad = 0; // Flush left alignment
+        const rightMargin = 4;
+        const targetRightX = 384 - rightMargin; // 380
         const scaleLabelX = 2.05;
 
-        // Measure colon position on Line 1
-        const beforeColonW = ctx.measureText('TOTAL ').width;
-        const colonW = ctx.measureText(':').width;
-        const colonCenterX = leftPad + ((beforeColonW + colonW / 2) * scaleLabelX);
+        if (isTwoLine) {
+          // Line 1: Measure colon position
+          const beforeColonW = ctx.measureText('TOTAL ').width;
+          const colonW = ctx.measureText(':').width;
+          const colonCenterX = leftPad + ((beforeColonW + colonW / 2) * scaleLabelX);
 
-        // Line 2: Calculate scaleValueX so star aligns to colon AND right edge hits targetRightX (378)
-        const starW = ctx.measureText('*').width;
-        const valueW = ctx.measureText(value).width;
-        const availSpan = targetRightX - colonCenterX;
-        let scaleValueX = availSpan / (valueW - starW / 2);
+          // Line 2: Scale value so star aligns under colon and ends at rightMargin
+          const starW = ctx.measureText('*').width;
+          const valueW = ctx.measureText(value).width;
+          const availSpan = targetRightX - colonCenterX;
+          let scaleValueX = availSpan / (valueW - starW / 2);
+          scaleValueX = Math.min(2.40, Math.max(1.1, scaleValueX));
 
-        // Safety bounds
-        scaleValueX = Math.min(2.40, Math.max(1.0, scaleValueX));
+          const valueCanvasX = colonCenterX - ((starW * scaleValueX) / 2);
 
-        // Align star center directly under colon center
-        const valueCanvasX = colonCenterX - ((starW * scaleValueX) / 2);
+          // Draw Line 1 (TOTAL :)
+          const centerY1 = 12;
+          ctx.save();
+          ctx.translate(leftPad, centerY1);
+          ctx.scale(scaleLabelX, 1.0);
+          ctx.fillText(label, 0, 0);
+          ctx.restore();
 
-        // Draw Line 1: TOTAL : (anchored to left at leftPad)
-        const centerY1 = 16;
-        ctx.save();
-        ctx.translate(leftPad, centerY1);
-        ctx.scale(scaleLabelX, 1.0);
-        ctx.fillText(label, 0, 0);
-        ctx.restore();
+          // Draw Line 2 (*...)
+          const centerY2 = 36;
+          ctx.save();
+          ctx.translate(valueCanvasX, centerY2);
+          ctx.scale(scaleValueX, 1.0);
+          ctx.fillText(value, 0, 0);
+          ctx.restore();
+        } else {
+          // Single Line layout:
+          // Left: TOTAL : (scaleLabelX = 2.05)
+          // Right: *... right-aligned to targetRightX with scaleValueX = 1.95
+          const centerY = 14;
+          ctx.save();
+          ctx.translate(leftPad, centerY);
+          ctx.scale(scaleLabelX, 1.0);
+          ctx.fillText(label, 0, 0);
+          ctx.restore();
 
-        // Draw Line 2: *... (star aligned to colon, right-aligned to 378)
-        const centerY2 = 44;
-        ctx.save();
-        ctx.translate(valueCanvasX, centerY2);
-        ctx.scale(scaleValueX, 1.0);
-        ctx.fillText(value, 0, 0);
-        ctx.restore();
+          const valueW = ctx.measureText(value).width;
+          const scaleValueX = 1.95;
+          const valueCanvasX = targetRightX - (valueW * scaleValueX);
+
+          ctx.save();
+          ctx.translate(valueCanvasX, centerY);
+          ctx.scale(scaleValueX, 1.0);
+          ctx.fillText(value, 0, 0);
+          ctx.restore();
+        }
 
         return canvasToEscPosRaster(canvas);
       };
 
       // 3. Bottom ET Emblem + MFE Number Generator:
-      // Aligned on exact center line, equal in height (31 dots), light weight (no boldness: 300), thin stroke, longer width (1.75x), unslashed zeros
+      // Compact height (36 dots), aligned on exact center line, light weight (no boldness: 300), thin stroke, longer width (1.75x)
       const createBottomEmblemChunk = (mfeNumber) => {
         const canvas = document.createElement('canvas');
         canvas.width = 384;
-        canvas.height = 50;
+        canvas.height = 36;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Vector ET emblem dimensions (equal to MFE font height ~31 dots)
-        const scale = 1.95;
-        const emblemW = 34 * scale; // ~66 dots
-        const emblemH = 16 * scale; // ~31 dots
-        const gap = 14;
+        // Vector ET emblem dimensions (scaled to 24 dots font height)
+        const scale = 1.50;
+        const emblemW = 34 * scale; // 51 dots
+        const emblemH = 16 * scale; // 24 dots
+        const gap = 12;
 
-        // Clean unslashed oval zeros, light weight (no boldness: 300), 30px, longer width (1.75x)
-        ctx.font = '300 30px "Oswald", "Arial", sans-serif';
+        // Clean unslashed oval zeros, light weight (300), 24px, longer width (1.75x)
+        ctx.font = '300 24px "Oswald", "Arial", sans-serif';
         const mfeStr = mfeNumber || 'MFE0066951';
         const mfeW = ctx.measureText(mfeStr).width;
         const scaleX = 1.75;
 
         const totalW = emblemW + gap + (mfeW * scaleX);
         const startX = Math.round((384 - totalW) / 2);
-        const centerY = 25;
+        const centerY = 18;
 
         // Draw ET monogram vector lines (thinner stroke, italic slant)
         ctx.save();
         ctx.translate(startX, centerY - (emblemH / 2));
         ctx.scale(scale, scale);
         ctx.transform(1, 0, -0.20, 1, 0, 0); // Italic slant
-        ctx.lineWidth = 1.1; // Thin stroke (not bold)
+        ctx.lineWidth = 1.0; // Thin stroke (not bold)
         ctx.lineCap = 'square';
         ctx.strokeStyle = '#000000';
         ctx.beginPath();
@@ -333,7 +350,7 @@ export default function ReceiptGenerator() {
         ctx.scale(scaleX, 1.0);
         ctx.fillStyle = '#000000';
         ctx.textBaseline = 'middle';
-        ctx.font = '300 30px "Oswald", "Arial", sans-serif';
+        ctx.font = '300 24px "Oswald", "Arial", sans-serif';
         ctx.fillText(mfeStr, 0, 0);
         ctx.restore();
 
@@ -352,10 +369,12 @@ export default function ReceiptGenerator() {
       const taxAmount = (taxableAmount * Number(formData.taxRate)) / 100;
       const totalAmount = taxableAmount + taxAmount;
       const totalFormatted = formatCurrency(totalAmount);
+      const intDigits = Math.floor(Math.abs(Number(totalAmount) || 0)).toString().length;
+      const isTwoLineTotal = intDigits >= 6;
 
       // Render graphics
       const topLogoBytes = createTopLogoChunk();
-      const totalBytes = createTotalChunk(totalFormatted);
+      const totalBytes = createTotalChunk(totalFormatted, isTwoLineTotal);
       const bottomEmblemBytes = createBottomEmblemChunk(formData.mfeNumber);
 
       const chunks = [];
@@ -401,15 +420,15 @@ export default function ReceiptGenerator() {
       pushText(`E-MOBILE:-${formData.eMobile}`, 1);
       pushText(`TEL:-${formData.tel}`, 1);
 
-      // 3. Spacing
-      pushText('', 0);
+      // 3. Spacing (micro-feed between seller info and FS No)
+      pushBytes([0x1B, 0x4A, 10]);
 
       // 4. FS No, Date & Time (LEFT)
       pushText(`FS No. ${formData.fsNo}`, 0);
       pushText(pad(formData.date, formData.time, 32), 0);
 
-      // 5. Spacing
-      pushText('', 0);
+      // 5. Spacing (micro-feed between Date/Time and Buyer Info)
+      pushBytes([0x1B, 0x4A, 8]);
 
       // 6. Buyer Info (LEFT)
       pushText(`Buyer's TIN: ${formData.buyerTin}`, 0);
@@ -420,10 +439,7 @@ export default function ReceiptGenerator() {
       pushText("Buyer's phone:", 0);
       pushText(formData.buyerPhone || '.....................', 0);
 
-      // 7. Spacing
-      pushText('', 0);
-
-      // 8. Items
+      // 7. Items (immediately following buyer phone without extra blank line)
       for (const it of items) {
         const hasQty = it.quantity && Number(it.quantity) > 0 && it.unitPrice && Number(it.unitPrice) > 0;
         if (hasQty) {
@@ -973,7 +989,7 @@ export default function ReceiptGenerator() {
             <div className="receipt-row nowrap">TEL:-{formData.tel}</div>
           </div>
 
-          <div className="mt-2">
+          <div className="mt-1">
             <div className="receipt-row nowrap">FS No. {formData.fsNo}</div>
             <div className="flex-row">
               <span className="nowrap">{formData.date}</span>
@@ -981,7 +997,7 @@ export default function ReceiptGenerator() {
             </div>
           </div>
 
-          <div className="space-y-0.5 mt-2">
+          <div className="space-y-0.5 mt-1">
             <div className="receipt-row nowrap">Buyer's TIN: {formData.buyerTin}</div>
             <div className="receipt-row nowrap">Buyer's name: {formData.buyerName}</div>
             {formData.buyerSuffix && <div className="receipt-row nowrap">{formData.buyerSuffix}</div>}
@@ -989,7 +1005,7 @@ export default function ReceiptGenerator() {
             <div className="receipt-row nowrap">{formData.buyerPhone || '.....................'}</div>
           </div>
 
-          <div className="mt-2 space-y-0.5">
+          <div className="mt-1 space-y-0.5">
             {items.map((item) => {
               const hasQty = item.quantity && Number(item.quantity) > 0 && item.unitPrice && Number(item.unitPrice) > 0;
               const qtyStr = Number(item.quantity) % 1 === 0 ? Number(item.quantity).toString() : Number(item.quantity).toFixed(2);
@@ -1025,8 +1041,17 @@ export default function ReceiptGenerator() {
           <div className="receipt-divider"></div>
 
           <div className="my-1">
-            <div className="total-label">TOTAL :</div>
-            <div className="total-amount-row">*{formatCurrency(totalAmount)}</div>
+            {Math.floor(Math.abs(Number(totalAmount) || 0)).toString().length >= 6 ? (
+              <>
+                <div className="total-label">TOTAL :</div>
+                <div className="total-amount-row">*{formatCurrency(totalAmount)}</div>
+              </>
+            ) : (
+              <div className="flex justify-between items-baseline">
+                <span className="total-label-inline">TOTAL :</span>
+                <span className="total-amount-inline">*{formatCurrency(totalAmount)}</span>
+              </div>
+            )}
           </div>
 
           <div className="cash-block my-0.5">
@@ -1065,7 +1090,7 @@ export default function ReceiptGenerator() {
             </div>
           </div>
 
-          <div className="text-center mt-2">
+          <div className="text-center mt-1">
             <div className="receipt-row">THANK YOU COME AGAIN!</div>
           </div>
 

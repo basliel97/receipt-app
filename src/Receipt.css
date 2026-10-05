@@ -56,7 +56,7 @@
 /* --- TOTAL BLOCK TEXT STYLE --- */
 .total-label {
   font-family: 'Oswald', 'Impact', sans-serif;
-  font-size: 16px;
+  font-size: 13.5px;
   font-weight: 300;
   letter-spacing: 0.5px;
   transform: scaleX(2.05);
@@ -68,7 +68,7 @@
 .total-amount-row {
   text-align: right;
   font-family: 'Oswald', 'Impact', sans-serif;
-  font-size: 16px;
+  font-size: 13.5px;
   font-weight: 300;
   letter-spacing: 0.5px;
   transform: scaleX(2.20);
@@ -76,6 +76,30 @@
   line-height: 1.1;
   white-space: nowrap;
   display: block;
+}
+
+.total-label-inline {
+  font-family: 'Oswald', 'Impact', sans-serif;
+  font-size: 13.5px;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  transform: scaleX(2.05);
+  transform-origin: left;
+  line-height: 1.1;
+  display: inline-block;
+}
+
+.total-amount-inline {
+  text-align: right;
+  font-family: 'Oswald', 'Impact', sans-serif;
+  font-size: 13.5px;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  transform: scaleX(1.95);
+  transform-origin: right;
+  line-height: 1.1;
+  white-space: nowrap;
+  display: inline-block;
 }
 
 /* --- CASH BIRR: sits between the total and the tax lines --- */
@@ -132,7 +156,7 @@
 
 .mfe-number {
   font-family: 'Oswald', 'Impact', sans-serif;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 300;
   letter-spacing: 0.5px;
   transform: scaleX(1.75);
