@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Oswald:ital,wght@0,400;0,500;0,600;0,700;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Oswald:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,700&display=swap');
 @import "tailwindcss";
 
 /* 2. 58mm Thermal POS Roll Simulator Container (384 dots printable / 48mm width) */
@@ -57,9 +57,9 @@
 .total-label {
   font-family: 'Oswald', 'Impact', sans-serif;
   font-size: 16px;
-  font-weight: 400;
+  font-weight: 300;
   letter-spacing: 0.5px;
-  transform: scaleX(1.75);
+  transform: scaleX(2.05);
   transform-origin: left;
   line-height: 1.1;
   display: block;
@@ -69,9 +69,9 @@
   text-align: right;
   font-family: 'Oswald', 'Impact', sans-serif;
   font-size: 16px;
-  font-weight: 400;
+  font-weight: 300;
   letter-spacing: 0.5px;
-  transform: scaleX(2.05);
+  transform: scaleX(2.20);
   transform-origin: right;
   line-height: 1.1;
   white-space: nowrap;
@@ -133,9 +133,9 @@
 .mfe-number {
   font-family: 'Oswald', 'Impact', sans-serif;
   font-size: 16px;
-  font-weight: 400;
+  font-weight: 300;
   letter-spacing: 0.5px;
-  transform: scaleX(1.5);
+  transform: scaleX(1.75);
   transform-origin: left;
   margin-right: 24px;
   white-space: nowrap;

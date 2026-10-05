@@ -179,7 +179,7 @@ export default function ReceiptGenerator() {
             const g = pixels[idx + 1];
             const b = pixels[idx + 2];
             const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-            if (lum < 185) {
+            if (lum < 140) {
               const byteIdx = y * bytesPerRow + Math.floor(x / 8);
               const bitIdx = 7 - (x % 8);
               bitmap[byteIdx] |= (1 << bitIdx);
@@ -238,14 +238,14 @@ export default function ReceiptGenerator() {
 
         ctx.fillStyle = '#000000';
         ctx.textBaseline = 'middle';
-        ctx.font = 'normal 30px "Oswald", "Arial", sans-serif';
+        ctx.font = '300 30px "Oswald", "Arial", sans-serif';
 
         const label = 'TOTAL :';
         const value = '*' + totalStr;
         const leftPad = 4;
         const rightMargin = 6;
         const targetRightX = 384 - rightMargin; // 378
-        const scaleLabelX = 1.80;
+        const scaleLabelX = 2.05;
 
         // Measure colon position on Line 1
         const beforeColonW = ctx.measureText('TOTAL ').width;
@@ -259,7 +259,7 @@ export default function ReceiptGenerator() {
         let scaleValueX = availSpan / (valueW - starW / 2);
 
         // Safety bounds
-        scaleValueX = Math.min(2.20, Math.max(1.0, scaleValueX));
+        scaleValueX = Math.min(2.40, Math.max(1.0, scaleValueX));
 
         // Align star center directly under colon center
         const valueCanvasX = colonCenterX - ((starW * scaleValueX) / 2);
@@ -284,7 +284,7 @@ export default function ReceiptGenerator() {
       };
 
       // 3. Bottom ET Emblem + MFE Number Generator:
-      // Aligned on exact center line, equal in height (31 dots), normal weight (no boldness), thin stroke, longer width (1.50x), unslashed zeros
+      // Aligned on exact center line, equal in height (31 dots), light weight (no boldness: 300), thin stroke, longer width (1.75x), unslashed zeros
       const createBottomEmblemChunk = (mfeNumber) => {
         const canvas = document.createElement('canvas');
         canvas.width = 384;
@@ -299,11 +299,11 @@ export default function ReceiptGenerator() {
         const emblemH = 16 * scale; // ~31 dots
         const gap = 14;
 
-        // Clean unslashed oval zeros, normal weight (no boldness), 30px, longer width (1.50x)
-        ctx.font = 'normal 30px "Oswald", "Arial", sans-serif';
+        // Clean unslashed oval zeros, light weight (no boldness: 300), 30px, longer width (1.75x)
+        ctx.font = '300 30px "Oswald", "Arial", sans-serif';
         const mfeStr = mfeNumber || 'MFE0066951';
         const mfeW = ctx.measureText(mfeStr).width;
-        const scaleX = 1.50;
+        const scaleX = 1.75;
 
         const totalW = emblemW + gap + (mfeW * scaleX);
         const startX = Math.round((384 - totalW) / 2);
@@ -326,14 +326,14 @@ export default function ReceiptGenerator() {
         ctx.stroke();
         ctx.restore();
 
-        // Draw MFE number on the exact same horizontal center line, longer width (scaleX = 1.50)
+        // Draw MFE number on the exact same horizontal center line, longer width (scaleX = 1.75)
         const mfeStartX = startX + emblemW + gap;
         ctx.save();
         ctx.translate(mfeStartX, centerY);
         ctx.scale(scaleX, 1.0);
         ctx.fillStyle = '#000000';
         ctx.textBaseline = 'middle';
-        ctx.font = 'normal 30px "Oswald", "Arial", sans-serif';
+        ctx.font = '300 30px "Oswald", "Arial", sans-serif';
         ctx.fillText(mfeStr, 0, 0);
         ctx.restore();
 
